@@ -1,1339 +1,633 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PTSI Custody Ledger — Sistem Validasi Operasi Lintas Divisi</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fuel Custody Live — Integrated Fuel Blending & Receiving</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg-0:#0A0D10; --bg-1:#12171C; --bg-2:#171E24; --bg-3:#1D262D;
-  --border:#262F37; --border-soft:#1C242B;
-  --text-0:#ECF1F4; --text-1:#A8B3BB; --text-2:#69747C;
-  --amber:#F0A63A; --amber-soft:#3A2E17; --amber-line:#5C4622;
-  --teal:#3FC0AC; --teal-soft:#132C29;
-  --green:#3BC988; --green-soft:#12271D;
-  --red:#F0554C; --red-soft:#2B1614;
-  --blue:#5B9BD5; --blue-soft:#14232F;
-  --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif; --display:'Syne',sans-serif;
-  --radius:8px;
+  --bg:#080b0e; --bg2:#0d1217; --panel:#111820; --panel2:#151e27; --panel3:#1a2530;
+  --line:#23303b; --line2:#1b252e; --text:#edf2f5; --muted:#8d9aa5; --dim:#5f6c76;
+  --orange:#f0a43a; --orange2:#ffbf5c; --orangeSoft:#342715;
+  --green:#42d392; --greenSoft:#10291f; --red:#ff625a; --redSoft:#301817;
+  --blue:#5ea7ff; --blueSoft:#13243a; --cyan:#50d5c7; --cyanSoft:#102c2a;
+  --yellow:#ffd166; --purple:#b794f4;
+  --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans:'Inter', system-ui, sans-serif; --display:'Syne', var(--sans);
+  --radius:10px;
 }
-*{box-sizing:border-box;}
-html,body{margin:0;padding:0;}
-body{
-  background:var(--bg-0); color:var(--text-0); font-family:var(--sans);
-  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
-}
-::selection{background:var(--amber); color:#1a1305;}
-a{color:inherit;}
-button{font-family:inherit; cursor:pointer;}
-input,select,textarea{font-family:inherit; font-size:13px;}
-:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
-::-webkit-scrollbar{width:10px; height:10px;}
-::-webkit-scrollbar-track{background:var(--bg-1);}
-::-webkit-scrollbar-thumb{background:var(--bg-3); border-radius:5px;}
-
-/* ---------- Shell ---------- */
-#shell{display:flex; min-height:100vh;}
-#sidebar{
-  width:252px; flex:none; background:var(--bg-1); border-right:1px solid var(--border-soft);
-  display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:40;
-  transition:transform .2s ease;
-}
-#content{margin-left:252px; flex:1; min-width:0; display:flex; flex-direction:column;}
-.brand{padding:20px 18px 16px; border-bottom:1px solid var(--border-soft);}
-.brand-mark{display:flex; align-items:center; gap:10px;}
-.brand-badge{
-  width:34px; height:34px; border-radius:7px; background:linear-gradient(155deg,var(--amber),#c97e1c);
-  display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:800;
-  color:#1a1305; font-size:14px; flex:none;
-}
-.brand-text .brand-title{font-family:var(--display); font-weight:800; font-size:15px; letter-spacing:.02em;}
-.brand-text .brand-sub{font-size:10.5px; color:var(--text-2); font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; margin-top:1px;}
-
-.nav{flex:1; overflow-y:auto; padding:14px 10px;}
-.nav-group{margin-bottom:16px;}
-.nav-group-label{font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-2); font-family:var(--mono); padding:0 10px; margin-bottom:6px;}
-.nav-item{
-  display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:7px; color:var(--text-1);
-  font-size:13.2px; font-weight:500; margin-bottom:2px; border:1px solid transparent; text-decoration:none;
-}
-.nav-item svg{flex:none; opacity:.85;}
-.nav-item:hover{background:var(--bg-2); color:var(--text-0);}
-.nav-item.active{background:var(--amber-soft); border-color:var(--amber-line); color:var(--amber);}
-.nav-item.active svg{opacity:1;}
-.nav-badge{margin-left:auto; font-family:var(--mono); font-size:10px; background:var(--bg-3); color:var(--text-1); padding:1px 6px; border-radius:20px;}
-
-.sidebar-foot{border-top:1px solid var(--border-soft); padding:14px; background:var(--bg-1);}
-.role-switch label{display:block; font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); font-family:var(--mono); margin-bottom:6px;}
-.role-switch select{
-  width:100%; background:var(--bg-2); border:1px solid var(--border); color:var(--text-0);
-  padding:8px 9px; border-radius:6px; font-size:12.5px;
-}
-.role-meta{margin-top:9px; font-size:11px; color:var(--text-2); line-height:1.6;}
-.role-meta b{color:var(--text-1); font-weight:600;}
-.scope-pill{display:inline-block; margin-top:6px; font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:20px; background:var(--teal-soft); color:var(--teal); border:1px solid #1d4a44;}
-
-/* ---------- Topbar ---------- */
-#topbar{
-  height:58px; flex:none; border-bottom:1px solid var(--border-soft); background:rgba(10,13,16,.85);
-  backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:space-between; padding:0 22px;
-  position:sticky; top:0; z-index:30;
-}
-.crumb{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-2); font-family:var(--mono);}
-.crumb b{color:var(--text-0); font-weight:600;}
-#menuToggle{display:none; background:none; border:1px solid var(--border); color:var(--text-1); border-radius:6px; padding:7px 9px; margin-right:8px;}
-.topbar-right{display:flex; align-items:center; gap:14px;}
-.clock{font-family:var(--mono); font-size:11.5px; color:var(--text-2);}
-.user-chip{display:flex; align-items:center; gap:8px; background:var(--bg-2); border:1px solid var(--border); padding:6px 10px 6px 6px; border-radius:20px;}
-.user-avatar{width:24px; height:24px; border-radius:50%; background:var(--teal-soft); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; font-family:var(--mono);}
-.user-chip-name{font-size:12px; font-weight:600;}
-.user-chip-role{font-size:10px; color:var(--text-2);}
-
-/* ---------- Main ---------- */
-#main{padding:24px 26px 60px; max-width:1400px; width:100%; margin:0 auto;}
-.page-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap;}
-.page-title{font-family:var(--display); font-weight:700; font-size:22px; letter-spacing:.01em;}
-.page-desc{color:var(--text-2); font-size:12.8px; margin-top:4px; max-width:560px;}
-.page-actions{display:flex; gap:8px; flex-wrap:wrap;}
-
-.btn{
-  display:inline-flex; align-items:center; gap:7px; padding:9px 14px; border-radius:7px; font-size:12.8px;
-  font-weight:600; border:1px solid var(--border); background:var(--bg-2); color:var(--text-0);
-}
-.btn:hover{background:var(--bg-3);}
-.btn-primary{background:var(--amber); color:#1a1305; border-color:var(--amber);}
-.btn-primary:hover{background:#f5b658;}
-.btn-ghost{background:transparent;}
-.btn-sm{padding:6px 10px; font-size:11.8px;}
-.btn:disabled{opacity:.4; cursor:not-allowed;}
-
-/* KPI cards */
-.kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px;}
-.kpi-card{background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius); padding:16px;}
-.kpi-label{font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:.06em; font-family:var(--mono);}
-.kpi-value{font-family:var(--display); font-size:26px; font-weight:700; margin-top:8px;}
-.kpi-sub{font-size:11.5px; color:var(--text-2); margin-top:4px;}
-.kpi-accent{width:26px; height:3px; border-radius:2px; margin-top:10px;}
-
-.dash-grid{display:grid; grid-template-columns:1.4fr 1fr; gap:14px; align-items:start;}
-@media(max-width:980px){.dash-grid{grid-template-columns:1fr;} .kpi-grid{grid-template-columns:repeat(2,1fr);}}
-
-.panel{background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius); overflow:hidden;}
-.panel-head{padding:14px 16px; border-bottom:1px solid var(--border-soft); display:flex; align-items:center; justify-content:space-between;}
-.panel-title{font-weight:700; font-size:13.5px;}
-.panel-body{padding:4px 0;}
-.activity-row{display:flex; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border-soft); align-items:flex-start;}
-.activity-row:last-child{border-bottom:none;}
-.activity-dot{width:7px; height:7px; border-radius:50%; margin-top:6px; flex:none;}
-.activity-text{font-size:12.3px;}
-.activity-text b{font-weight:600;}
-.activity-time{font-size:10.5px; color:var(--text-2); font-family:var(--mono); margin-top:2px;}
-.followup-row{padding:11px 16px; border-bottom:1px solid var(--border-soft); font-size:12.3px;}
-.followup-row:last-child{border-bottom:none;}
-.followup-row .ff-title{font-weight:600; margin-bottom:2px;}
-.followup-row .ff-meta{color:var(--text-2); font-size:11px;}
-.empty-note{padding:22px 16px; text-align:center; color:var(--text-2); font-size:12.3px;}
-
-/* Filter bar */
-.filter-bar{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius); padding:12px 14px; margin-bottom:14px;}
-.filter-field{display:flex; flex-direction:column; gap:5px;}
-.filter-field label{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-2); font-family:var(--mono);}
-.filter-field input,.filter-field select{background:var(--bg-2); border:1px solid var(--border); color:var(--text-0); padding:7px 9px; border-radius:6px; min-width:130px;}
-.filter-field.grow{flex:1; min-width:180px;}
-.filter-field.grow input{width:100%;}
-
-/* Table */
-.tbl-wrap{overflow-x:auto; background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius);}
-table{border-collapse:collapse; width:100%; min-width:760px;}
-thead th{
-  text-align:left; font-size:10.3px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-2);
-  font-family:var(--mono); padding:10px 12px; border-bottom:1px solid var(--border); white-space:nowrap; background:var(--bg-2);
-  position:sticky; top:0;
-}
-tbody td{padding:11px 12px; border-bottom:1px solid var(--border-soft); font-size:12.6px; vertical-align:middle; white-space:nowrap;}
-tbody tr:last-child td{border-bottom:none;}
-tbody tr:hover{background:var(--bg-2);}
-td.wrap,th.wrap{white-space:normal;}
-.mono{font-family:var(--mono); font-size:11.8px;}
-.cell-sub{font-size:10.6px; color:var(--text-2); margin-top:2px;}
-
-.badge{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; font-family:var(--mono); white-space:nowrap;}
-.badge-good{background:var(--green-soft); color:var(--green);}
-.badge-reject{background:var(--red-soft); color:var(--red);}
-.badge-pending{background:var(--blue-soft); color:var(--blue);}
-.badge-draft{background:var(--bg-3); color:var(--text-1);}
-.badge-progress{background:var(--amber-soft); color:var(--amber);}
-
-.seal-chip{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-family:var(--mono); font-weight:600;}
-.seal-chip svg{flex:none;}
-.seal-ok{color:var(--green);}
-.seal-bad{color:var(--red);}
-
-.sound-strip{display:flex; flex-direction:column; gap:3px; min-width:118px;}
-.sound-track{position:relative; height:6px; background:var(--bg-3); border-radius:3px; overflow:hidden;}
-.sound-fill{position:absolute; top:0; bottom:0; left:0; background:linear-gradient(90deg,var(--teal-soft),var(--teal)); border-radius:3px;}
-.sound-labels{display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--text-2);}
-
-.empty-row td{text-align:center; color:var(--text-2); padding:34px 12px;}
-
-/* Modal */
-.overlay{position:fixed; inset:0; background:rgba(6,8,10,.62); backdrop-filter:blur(2px); display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; z-index:100; overflow-y:auto;}
-.modal{background:var(--bg-1); border:1px solid var(--border); border-radius:12px; width:100%; max-width:560px; overflow:hidden;}
-.modal-head{padding:16px 20px; border-bottom:1px solid var(--border-soft); display:flex; align-items:center; justify-content:space-between;}
-.modal-title{font-family:var(--display); font-weight:700; font-size:16px;}
-.modal-close{background:none; border:none; color:var(--text-2); padding:4px;}
-.modal-body{padding:18px 20px; max-height:70vh; overflow-y:auto;}
-.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-.form-field{display:flex; flex-direction:column; gap:6px; margin-bottom:12px;}
-.form-field.full{grid-column:1/-1;}
-.form-field label{font-size:11.3px; font-weight:600; color:var(--text-1);}
-.form-field input,.form-field select,.form-field textarea{background:var(--bg-2); border:1px solid var(--border); color:var(--text-0); padding:9px 10px; border-radius:6px; width:100%;}
-.form-field .hint{font-size:10.5px; color:var(--text-2);}
-.form-field .calc{font-family:var(--mono); font-size:12px; color:var(--teal); margin-top:2px;}
-.modal-foot{padding:14px 20px; border-top:1px solid var(--border-soft); display:flex; justify-content:flex-end; gap:8px;}
-
-.toast-wrap{position:fixed; bottom:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:8px;}
-.toast{background:var(--bg-2); border:1px solid var(--border); border-left:3px solid var(--teal); padding:11px 16px; border-radius:7px; font-size:12.5px; box-shadow:0 8px 24px rgba(0,0,0,.4); min-width:220px;}
-
-.info-strip{display:flex; gap:10px; align-items:flex-start; background:var(--teal-soft); border:1px solid #1d4a44; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:12px; color:var(--text-1);}
-.info-strip svg{flex:none; color:var(--teal); margin-top:1px;}
-
-.master-tabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
-.master-tab{padding:8px 13px; border-radius:7px; font-size:12px; font-weight:600; background:var(--bg-2); border:1px solid var(--border); color:var(--text-1);}
-.master-tab.active{background:var(--amber-soft); border-color:var(--amber-line); color:var(--amber);}
-
-.note-foot{margin-top:26px; padding-top:14px; border-top:1px solid var(--border-soft); font-size:11px; color:var(--text-2); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
-
-@media(max-width:900px){
-  #sidebar{transform:translateX(-100%);}
-  #sidebar.open{transform:translateX(0);}
-  #content{margin-left:0;}
-  #menuToggle{display:inline-flex;}
-  .kpi-grid{grid-template-columns:1fr 1fr;}
-  .form-grid{grid-template-columns:1fr;}
-}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px}
+body{min-height:100vh;background-image:radial-gradient(circle at 80% -10%,rgba(240,164,58,.08),transparent 28%),radial-gradient(circle at 10% 40%,rgba(80,213,199,.04),transparent 32%)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.mono{font-family:var(--mono)}
+.text-good{color:var(--green)} .text-bad{color:var(--red)} .text-warn{color:var(--orange)} .text-blue{color:var(--blue)}
+#app{display:flex;min-height:100vh}
+.sidebar{width:270px;position:fixed;left:0;top:0;bottom:0;background:rgba(13,18,23,.97);border-right:1px solid var(--line2);z-index:30;display:flex;flex-direction:column}
+.brand{padding:20px 18px 16px;border-bottom:1px solid var(--line2)}
+.brand-row{display:flex;gap:11px;align-items:center}
+.logo{width:38px;height:38px;border-radius:9px;background:linear-gradient(145deg,var(--orange2),#d17d15);display:grid;place-items:center;color:#1b1205;font-family:var(--display);font-weight:800;box-shadow:0 0 30px rgba(240,164,58,.12)}
+.brand-title{font-family:var(--display);font-size:15px;font-weight:800;letter-spacing:.02em}
+.brand-sub{font-family:var(--mono);font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.11em;margin-top:2px}
+.site-chip{margin-top:14px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 10px;display:flex;justify-content:space-between;align-items:center}
+.site-chip span:first-child{font-size:11px;color:var(--muted)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;box-shadow:0 0 0 4px rgba(66,211,146,.08);animation:pulse 1.8s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(66,211,146,0)}}
+.nav{padding:14px 10px;overflow:auto;flex:1}
+.nav-label{font-size:9.5px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;letter-spacing:.11em;padding:7px 9px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 10px;margin:2px 0;border-radius:8px;color:var(--muted);text-decoration:none;border:1px solid transparent;transition:.15s}
+.nav-item:hover{background:var(--panel);color:var(--text)}
+.nav-item.active{background:var(--orangeSoft);border-color:#5b4320;color:var(--orange2)}
+.nav-icon{width:23px;text-align:center;font-size:14px}.nav-badge{margin-left:auto;font:10px var(--mono);background:var(--panel3);padding:2px 7px;border-radius:20px}
+.sidebar-foot{padding:14px;border-top:1px solid var(--line2)}
+.sidebar-foot label{font:9.5px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);display:block;margin-bottom:6px}
+.role-select{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
+.role-scope{margin-top:8px;font-size:10.5px;color:var(--dim);line-height:1.5}
+.main-shell{margin-left:270px;min-width:0;flex:1}
+.topbar{height:62px;position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line2);background:rgba(8,11,14,.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.crumb{font:11px var(--mono);color:var(--dim)} .crumb b{color:var(--text)}
+.top-right{display:flex;align-items:center;gap:14px}.clock{font:11px var(--mono);color:var(--muted)}
+.user-chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:22px;padding:5px 10px 5px 5px}.avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--cyanSoft);color:var(--cyan);font:700 10px var(--mono)}
+.user-name{font-size:11.5px;font-weight:700}.user-role{font-size:9.5px;color:var(--dim)}
+.menu-btn{display:none;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 9px}
+.ticker{height:35px;border-bottom:1px solid var(--line2);background:#0b1015;overflow:hidden;white-space:nowrap;display:flex;align-items:center}
+.ticker-track{display:inline-flex;gap:28px;min-width:max-content;animation:ticker 32s linear infinite;font:10.5px var(--mono)}
+.ticker-item{display:flex;gap:7px;align-items:center;color:var(--muted)}.ticker-item b{color:var(--text)}
+@keyframes ticker{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+.content{padding:24px 26px 60px;max-width:1680px;margin:auto}
+.page-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.page-title{font:700 24px var(--display)}.page-desc{font-size:12.5px;color:var(--muted);margin-top:5px;max-width:780px;line-height:1.6}.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:9px 13px;font-size:12px;font-weight:700}.btn:hover{background:var(--panel3)}.btn-primary{background:var(--orange);border-color:var(--orange);color:#1b1205}.btn-danger{color:var(--red);border-color:#5b2926;background:var(--redSoft)}.btn-sm{padding:6px 9px;font-size:10.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.grid-kpi{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:11px;margin-bottom:14px}
+.kpi{border:1px solid var(--line2);background:linear-gradient(180deg,var(--panel),#0f151b);border-radius:var(--radius);padding:14px;min-height:111px;position:relative;overflow:hidden}.kpi:after{content:'';position:absolute;right:-25px;top:-25px;width:80px;height:80px;border-radius:50%;border:1px solid rgba(255,255,255,.035)}
+.kpi-label{font:9.5px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}.kpi-value{font:700 25px var(--display);margin-top:10px}.kpi-sub{font-size:10.5px;color:var(--muted);margin-top:4px}.mini-line{margin-top:9px;height:3px;background:var(--line2);border-radius:2px;overflow:hidden}.mini-line span{display:block;height:100%;border-radius:2px;background:var(--orange)}
+.layout-2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,.85fr);gap:14px;margin-bottom:14px}.layout-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.panel{border:1px solid var(--line2);background:var(--panel);border-radius:var(--radius);overflow:hidden}.panel-head{padding:13px 15px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center;gap:10px}.panel-title{font-size:12.5px;font-weight:800}.panel-sub{font-size:10px;color:var(--dim);margin-top:2px}.panel-body{padding:14px 15px}.panel-body.flush{padding:0}
+.chart-wrap{height:250px;position:relative}.chart-grid{position:absolute;inset:10px 0 25px 0;background-image:linear-gradient(to bottom,transparent 24%,rgba(255,255,255,.04) 25%,transparent 26%,transparent 49%,rgba(255,255,255,.04) 50%,transparent 51%,transparent 74%,rgba(255,255,255,.04) 75%,transparent 76%),linear-gradient(to right,transparent 19%,rgba(255,255,255,.035) 20%,transparent 21%,transparent 39%,rgba(255,255,255,.035) 40%,transparent 41%,transparent 59%,rgba(255,255,255,.035) 60%,transparent 61%,transparent 79%,rgba(255,255,255,.035) 80%,transparent 81%)}
+.chart-svg{position:absolute;inset:0;width:100%;height:100%}.chart-labels{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;color:var(--dim);font:9px var(--mono)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font:10px var(--mono);color:var(--muted)}.legend span:before{content:'';width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px}.lg-orange:before{background:var(--orange)}.lg-cyan:before{background:var(--cyan)}.lg-green:before{background:var(--green)}
+.market-list{display:flex;flex-direction:column}.market-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line2)}.market-row:last-child{border-bottom:none}.market-name{font-size:11.5px;font-weight:700}.market-meta{font:9.5px var(--mono);color:var(--dim);margin-top:2px}.market-value{font:700 12px var(--mono)}.market-delta{font:700 10px var(--mono);min-width:68px;text-align:right}
+.alert{padding:10px 11px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--bg2)}.alert:last-child{margin-bottom:0}.alert-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.alert-title{font-size:11.5px;font-weight:800}.alert-meta{font:9.5px var(--mono);color:var(--dim);margin-top:5px;line-height:1.5}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 8px;font:700 9.5px var(--mono);white-space:nowrap}.good{background:var(--greenSoft);color:var(--green)}.bad{background:var(--redSoft);color:var(--red)}.warn{background:var(--orangeSoft);color:var(--orange2)}.info{background:var(--blueSoft);color:var(--blue)}.neutral{background:var(--panel3);color:var(--muted)}
+.table-wrap{overflow:auto;border:1px solid var(--line2);border-radius:var(--radius);background:var(--panel)}table{width:100%;border-collapse:collapse;min-width:980px}th{background:var(--panel2);color:var(--dim);font:700 9.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:10px 11px;border-bottom:1px solid var(--line)}td{font-size:11.5px;padding:11px;border-bottom:1px solid var(--line2);vertical-align:middle}tbody tr:hover{background:rgba(255,255,255,.018)}tbody tr:last-child td{border-bottom:none}.cell-main{font-weight:700}.cell-sub{font:9.5px var(--mono);color:var(--dim);margin-top:3px}
+.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field.span-2{grid-column:span 2}.field.span-4{grid-column:1/-1}.field label{font:9.5px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.06em}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--bg2);color:var(--text);border-radius:7px;padding:9px 10px;outline:none}.field textarea{min-height:78px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#806030;box-shadow:0 0 0 3px rgba(240,164,58,.06)}.field .hint{font-size:9.5px;color:var(--dim)}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px;padding-top:13px;border-top:1px solid var(--line2)}
+.readonly-card{border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:12px}.readonly-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.ro-label{font:9px var(--mono);color:var(--dim);text-transform:uppercase}.ro-value{font-size:11.5px;font-weight:700;margin-top:3px}
+.flow-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}.step{position:relative;border:1px solid var(--line2);background:var(--panel);border-radius:9px;padding:11px;min-height:84px}.step-no{font:9px var(--mono);color:var(--dim)}.step-title{font-size:11px;font-weight:800;margin-top:6px}.step-status{font:9px var(--mono);margin-top:5px;color:var(--muted)}.step.done{border-color:#225443;background:linear-gradient(180deg,#11241d,var(--panel))}.step.active{border-color:#694b21;background:linear-gradient(180deg,#291f12,var(--panel));box-shadow:inset 0 2px var(--orange)}
+.validation-card{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.score-box{display:grid;place-items:center;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:16px}.score-ring{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--green) 0 88%,var(--panel3) 88% 100%);position:relative}.score-ring:after{content:'';position:absolute;inset:10px;background:var(--bg2);border-radius:50%}.score-ring span{position:relative;z-index:1;font:800 25px var(--display)}.check-list{display:flex;flex-direction:column;gap:8px}.check-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line2);padding-bottom:7px}.check-row:last-child{border-bottom:none}.check-name{font-size:11px;color:var(--muted)}
+.toast{position:fixed;right:22px;bottom:22px;background:#17211d;border:1px solid #295b47;color:var(--green);padding:11px 14px;border-radius:9px;box-shadow:0 15px 40px rgba(0,0,0,.35);z-index:100;font-size:11.5px;display:none}.toast.show{display:block;animation:fade .2s ease}@keyframes fade{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.mobile-overlay{display:none}
+@media(max-width:1300px){.grid-kpi{grid-template-columns:repeat(3,1fr)}.form-grid{grid-template-columns:repeat(2,1fr)}.field.span-4{grid-column:1/-1}.readonly-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:980px){.sidebar{transform:translateX(-100%);transition:.2s}.sidebar.open{transform:none}.main-shell{margin-left:0}.menu-btn{display:inline-block}.mobile-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}.layout-2,.layout-3,.validation-card{grid-template-columns:1fr}.flow-steps{grid-template-columns:1fr 1fr}.topbar{padding:0 14px}.content{padding:18px 14px 50px}}
+@media(max-width:640px){.grid-kpi{grid-template-columns:1fr 1fr}.form-grid,.readonly-grid{grid-template-columns:1fr}.field.span-2{grid-column:span 1}.flow-steps{grid-template-columns:1fr}.clock{display:none}.page-head{flex-direction:column}.content{padding:16px 10px 40px}.grid-kpi{gap:8px}.kpi{min-height:100px}.user-name{display:none}}
 </style>
 </head>
 <body>
-<div id="shell">
-  <aside id="sidebar"></aside>
-  <div id="content">
-    <header id="topbar"></header>
-    <main id="main"></main>
-  </div>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-row">
+        <div class="logo">FC</div>
+        <div><div class="brand-title">Fuel Custody Live</div><div class="brand-sub">Blending · Transport · Receiving</div></div>
+      </div>
+      <div class="site-chip"><span><span class="live-dot"></span>System status</span><b class="mono" style="font-size:10px;color:var(--green)">LIVE</b></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <label>Simulasi role</label>
+      <select id="roleSelect" class="role-select"></select>
+      <div class="role-scope" id="roleScope"></div>
+    </div>
+  </aside>
+  <div class="mobile-overlay" id="overlay"></div>
+  <main class="main-shell">
+    <header class="topbar">
+      <div style="display:flex;align-items:center"><button class="menu-btn" id="menuBtn">☰</button><div class="crumb">PTSI / <b id="crumb">Live Dashboard</b></div></div>
+      <div class="top-right"><div class="clock" id="clock"></div><div class="user-chip"><div class="avatar" id="avatar">FO</div><div><div class="user-name" id="userName">Fuel Field Operator</div><div class="user-role" id="userRole">Fuel Blending</div></div></div></div>
+    </header>
+    <div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+    <section class="content" id="content"></section>
+  </main>
 </div>
-<div id="modalRoot"></div>
-<div class="toast-wrap" id="toastWrap"></div>
-
+<div class="toast" id="toast"></div>
 <script>
-/* ======================================================================
-   PTSI CUSTODY LEDGER — prototype front-end (data in-memory, per sesi)
-   ====================================================================== */
-
-/* ---------------- Icons ---------------- */
-const ICN = {
-  grid:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>',
-  clipboard:'<path d="M9 3h6a1 1 0 0 1 1 1v1h1.5A1.5 1.5 0 0 1 19 6.5v13A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-13A1.5 1.5 0 0 1 6.5 5H8V4a1 1 0 0 1 1-1z"/><path d="M8.5 5h7"/>',
-  clipCheck:'<path d="M9 3h6a1 1 0 0 1 1 1v1h1.5A1.5 1.5 0 0 1 19 6.5v13A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-13A1.5 1.5 0 0 1 6.5 5H8V4a1 1 0 0 1 1-1z"/><path d="M8.5 5h7"/><path d="M9 13.5l2 2 4-4.5"/>',
-  truck:'<path d="M3 7h11v9H3z"/><path d="M14 11h4l3 3v2h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/>',
-  tank:'<path d="M4 9c0-2 3.5-3.5 8-3.5S20 7 20 9v7c0 2-3.5 3.5-8 3.5S4 18 4 16z"/><path d="M4 9c0 2 3.5 3.5 8 3.5S20 11 20 9"/>',
-  scale:'<path d="M12 3v18M6 7h12M6 7l-3 6a3 3 0 0 0 6 0zM18 7l-3 6a3 3 0 0 0 6 0z"/>',
-  ship:'<path d="M4 14l1.5 5.2c.2.6.8 1 1.4 1h10.2c.6 0 1.2-.4 1.4-1L20 14z"/><path d="M6 14V9h9l3 5"/><path d="M9 9V5h3v4"/>',
-  anchor:'<circle cx="12" cy="5" r="2"/><path d="M12 7v13M6 12H2a10 10 0 0 0 10 9 10 10 0 0 0 10-9h-4"/>',
-  db:'<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
-  plus:'<path d="M12 5v14M5 12h14"/>',
-  x:'<path d="M18 6L6 18M6 6l12 12"/>',
-  check:'<path d="M4 12l5 5L20 6"/>',
-  alert:'<path d="M12 3l10 18H2z"/><path d="M12 9v5M12 17h.01"/>',
-  download:'<path d="M12 3v13m0 0l-4-4m4 4l4-4"/><path d="M4 20h16"/>',
-  filter:'<path d="M4 5h16l-6 8v6l-4-2v-4z"/>',
-  lock:'<rect x="5" y="10.5" width="14" height="9" rx="1.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>',
-  unlock:'<rect x="5" y="10.5" width="14" height="9" rx="1.5"/><path d="M8 10.5V7a4 4 0 0 1 7.4-2.1"/>',
-  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
-  chev:'<path d="M9 6l6 6-6 6"/>'
-};
-function icon(name,size=17){ return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICN[name]||''}</svg>`; }
-
-/* ---------------- Reference / master data ---------------- */
-const BUS = [
-  {id:'bu1', name:'Fuel Terminal Balikpapan'},
-  {id:'bu2', name:'Marine Operations'},
-  {id:'bu3', name:'Distribution & Depot Samarinda'},
-];
-const DEPTS = [
-  {id:'d1', name:'Terminal Ops Balikpapan', bu:'bu1'},
-  {id:'d2', name:'Quality Assurance', bu:'bu1'},
-  {id:'d3', name:'HSE', bu:'bu1'},
-  {id:'d4', name:'Management', bu:'bu1'},
-  {id:'d5', name:'Marine Survey', bu:'bu2'},
-  {id:'d6', name:'Depot Samarinda', bu:'bu3'},
-  {id:'d7', name:'Direksi', bu:null},
-  {id:'d8', name:'IT', bu:null},
-];
-const PRODUCTS = [
-  {id:'p1', name:'HSD / Solar'},
-  {id:'p2', name:'B35'},
-  {id:'p3', name:'Pertalite'},
-  {id:'p4', name:'Pertamax'},
-];
-const TANKS = [
-  {id:'t1', name:'T-101', location:'Terminal Balikpapan', product:'p1', cap:5000},
-  {id:'t2', name:'T-102', location:'Terminal Balikpapan', product:'p2', cap:5000},
-  {id:'t3', name:'D-201', location:'Depot Samarinda', product:'p1', cap:2000},
-  {id:'t4', name:'D-202', location:'Depot Samarinda', product:'p2', cap:2000},
-];
-const UNITS = [
-  {id:'u1', plate:'KT 8123 UY', type:'Tangki Truk', cap:16000, owner:'Trans Kalimantan Logistik'},
-  {id:'u2', plate:'KT 8456 UY', type:'Tangki Truk', cap:16000, owner:'Trans Kalimantan Logistik'},
-  {id:'u3', plate:'KT 9012 XZ', type:'Tangki Truk', cap:24000, owner:'Borneo Fuel Carrier'},
-  {id:'u4', plate:'KT 7788 UY', type:'Tangki Truk', cap:16000, owner:'Trans Kalimantan Logistik'},
-];
-const VESSELS = [
-  {id:'v1', name:'MT. Borneo Prima', imo:'9456123', cap:3500},
-  {id:'v2', name:'MT. Kalimantan Jaya', imo:'9782341', cap:5000},
-  {id:'v3', name:'TB. Mahakam Sentosa', imo:'9123456', cap:1800},
-];
-
-/* ---------------- Users & roles ---------------- */
-const USERS = [
-  {email:'inspector1@ptsi.co.id', name:'Andi Wibowo', role:'inspector', dept:'d1', bu:'bu1'},
-  {email:'operator1@ptsi.co.id', name:'Rudi Hartono', role:'operator', dept:'d1', bu:'bu1'},
-  {email:'surveyor1@ptsi.co.id', name:'Fajar Nugroho', role:'surveyor', dept:'d5', bu:'bu2'},
-  {email:'receiving1@ptsi.co.id', name:'Siti Aminah', role:'receiving', dept:'d6', bu:'bu3'},
-  {email:'validator1@ptsi.co.id', name:'Dewi Lestari', role:'validator', dept:'d2', bu:'bu1'},
-  {email:'supervisor1@ptsi.co.id', name:'Bambang Setiawan', role:'supervisor', dept:'d1', bu:'bu1'},
-  {email:'hse1@ptsi.co.id', name:'Yuni Kartika', role:'hse', dept:'d3', bu:'bu1'},
-  {email:'manager1@ptsi.co.id', name:'Hendra Gunawan', role:'manager', dept:'d4', bu:'bu1'},
-  {email:'direksi1@ptsi.co.id', name:'Dr. Herman Susanto', role:'direksi', dept:'d7', bu:null},
-  {email:'admin1@ptsi.co.id', name:'Kim (IT Admin)', role:'admin', dept:'d8', bu:null},
-];
-
+const TOLERANCE_RATE = 0.0001; // 0.01%
 const ROLE_CONFIG = {
-  inspector:  {label:'Inspector Lapangan', modules:['dashboard','inspection_pre','inspection_after'], scope:'own', canCreate:true, canApprove:false},
-  operator:   {label:'Operator Loading', modules:['dashboard','loading'], scope:'own', canCreate:true, canApprove:false},
-  surveyor:   {label:'Surveyor Marine', modules:['dashboard','discharge','ship_loading'], scope:'department', canCreate:true, canApprove:false},
-  receiving:  {label:'Receiving Officer', modules:['dashboard','receiving'], scope:'cross_validation', canCreate:true, canApprove:false},
-  validator:  {label:'Validator / QC', modules:['dashboard','validation'], scope:'all', canCreate:false, canApprove:true},
-  supervisor: {label:'Supervisor Terminal', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation'], scope:'department', canCreate:true, canApprove:true},
-  hse:        {label:'HSE Officer', modules:['dashboard','inspection_pre','inspection_after','discharge'], scope:'business_unit', canCreate:false, canApprove:false},
-  manager:    {label:'Manager / Kepala Divisi', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation','discharge','ship_loading'], scope:'business_unit', canCreate:false, canApprove:false},
-  direksi:    {label:'Direksi', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation','discharge','ship_loading'], scope:'all', canCreate:false, canApprove:false},
-  admin:      {label:'IT Admin', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation','discharge','ship_loading','master'], scope:'all', canCreate:true, canApprove:true},
+  fuel_field:{label:'Fuel Field Operator',site:'Fuel Blending',scope:'Operasi unit Fuel Blending',modules:['dashboard','pre_inspection','loading','after_inspection','shipment_monitor']},
+  fuel_spv:{label:'Fuel SPV Operator',site:'Fuel Blending',scope:'Discharge, barge loading, monitoring dan approval operasional',modules:['dashboard','shipment_monitor','discharge','marine_loading','validation']},
+  rf_operator:{label:'RF Operator',site:'Riau Fiber',scope:'Hanya shipment tujuan Riau Fiber dan data receiving site sendiri',modules:['dashboard','receiving','site_history']},
+  mill_operator:{label:'Mill Operator',site:'Mill',scope:'Hanya shipment tujuan Mill dan data receiving site sendiri',modules:['dashboard','receiving','site_history']},
+  maintank_operator:{label:'Maintank Operator',site:'Maintank',scope:'Hanya shipment tujuan Maintank dan data receiving site sendiri',modules:['dashboard','receiving','site_history']},
+  it_admin:{label:'IT Administrator',site:'Enterprise',scope:'Akses seluruh site, master data, audit dan role management',modules:['dashboard','pre_inspection','loading','after_inspection','shipment_monitor','receiving','site_history','discharge','marine_loading','validation','admin']}
 };
-
-const NAV_GROUPS = [
-  {label:'Overview', items:[{key:'dashboard', label:'Dashboard', icon:'grid'}]},
-  {label:'Lapangan', items:[
-    {key:'inspection_pre', label:'Inspeksi Pre-Loading', icon:'clipboard'},
-    {key:'inspection_after', label:'Inspeksi After-Loading', icon:'clipCheck'},
-    {key:'loading', label:'Loading', icon:'truck'},
-  ]},
-  {label:'Validasi Custody', items:[
-    {key:'receiving', label:'Receiving', icon:'tank'},
-    {key:'validation', label:'Validasi Volume', icon:'scale'},
-  ]},
-  {label:'Marine', items:[
-    {key:'discharge', label:'Discharge Cargo', icon:'anchor'},
-    {key:'ship_loading', label:'Loading ke Kapal', icon:'ship'},
-  ]},
-  {label:'Sistem', items:[{key:'master', label:'Master Data', icon:'db'}]},
+const NAV = [
+  {label:'Overview',items:[['dashboard','▦','Live Dashboard']]},
+  {label:'Fuel Blending',items:[['pre_inspection','✓','Before Loading Inspection'],['loading','⇆','Loading Operation'],['after_inspection','◆','After Loading Inspection'],['shipment_monitor','↗','Shipment Monitor']]},
+  {label:'Customer Receiving',items:[['receiving','⌁','Receiving Validation'],['site_history','≡','Receiving History'],['validation','◉','Custody Validation']]},
+  {label:'Marine & Cargo',items:[['discharge','⚓','Discharge Cargo'],['marine_loading','▱','Loading to Barge']]},
+  {label:'System',items:[['admin','⚙','Access & Governance']]}
 ];
-
-/* ---------------- Seed transactional data ---------------- */
-const DB = {
-  inspectionPre:[
-    r_ip('IP-001','2026-07-10T08:05','u1','Good','','SL-P10001'),
-    r_ip('IP-002','2026-07-10T09:20','u2','Good','','SL-P10002'),
-    r_ip('IP-003','2026-07-11T08:12','u3','Reject','Kebocoran valve bawah','SL-P10003'),
-    r_ip('IP-004','2026-07-11T10:40','u1','Good','','SL-P10004'),
-    r_ip('IP-005','2026-07-12T08:00','u4','Good','','SL-P10005'),
-    r_ip('IP-006','2026-07-13T08:30','u2','Reject','Seal gembok rusak','SL-P10006'),
-    r_ip('IP-007','2026-07-14T09:00','u1','Good','','SL-P10007'),
-    r_ip('IP-008','2026-07-15T08:20','u3','Good','','SL-P10008'),
-    r_ip('IP-009','2026-07-16T08:10','u4','Good','','SL-P10009'),
-    r_ip('IP-010','2026-07-17T07:55','u2','Good','','SL-P10010'),
+const DEST = {RF:'Riau Fiber',MILL:'Mill',MAINTANK:'Maintank'};
+const DEST_ROLE = {rf_operator:'RF',mill_operator:'MILL',maintank_operator:'MAINTANK'};
+const state = {
+  role:'it_admin', page:'dashboard',
+  inspections:[
+    {id:'PRE-260718-01',unitCode:'FT-021',plate:'BM 8121 AA',driver:'Ari Pratama',transporter:'PT Sinar Logistik',destination:'RF',tank:'Good',valve:'Good',manhole:'Good',emptySeal:'Open / verified',damage:'Tidak ada',result:'PASS',time:'2026-07-18 07:42'},
+    {id:'PRE-260718-02',unitCode:'FT-034',plate:'BM 9034 QK',driver:'Rian Saputra',transporter:'PT Trans Energi',destination:'MILL',tank:'Good',valve:'Good',manhole:'Good',emptySeal:'Open / verified',damage:'Tidak ada',result:'PASS',time:'2026-07-18 08:10'}
   ],
-  loading:[
-    r_ld('LD-001','u1','t1','2026-07-10T08:20','2026-07-10T08:55','Depot Samarinda',1500,1537,15.54,15.60,402150,417750,'SL-40001','Completed'),
-    r_ld('LD-002','u2','t1','2026-07-10T09:40','2026-07-10T10:10','Depot Samarinda',1537,1580,18.06,18.00,417750,435750,'SL-40002','Completed'),
-    r_ld('LD-003','u3','t2','2026-07-11T08:25','2026-07-11T09:02','Depot Samarinda',1200,1254,22.68,22.60,561200,583800,'SL-40003','Completed'),
-    r_ld('LD-004','u1','t1','2026-07-11T10:15','2026-07-11T10:48','Depot Samarinda',1580,1617,15.54,15.50,435750,451250,'SL-40004','Completed'),
-    r_ld('LD-005','u4','t2','2026-07-12T08:05','2026-07-12T08:34','Depot Samarinda',1254,1288,14.28,14.90,583800,598700,'SL-40005','Completed'),
-    r_ld('LD-006','u2','t1','2026-07-13T08:50','2026-07-13T09:24','Depot Samarinda',1617,1663,19.32,19.25,451250,470500,'SL-40006','Completed'),
-    r_ld('LD-007','u1','t2','2026-07-14T09:10','2026-07-14T09:41','Depot Samarinda',1288,1326,15.96,16.00,598700,614700,'SL-40007','Completed'),
-    r_ld('LD-008','u3','t1','2026-07-15T08:35','2026-07-15T09:12','Depot Samarinda',1663,1717,22.68,22.55,470500,493050,'SL-40008','Completed'),
-    r_ld('LD-009','u4','t2','2026-07-16T08:15','2026-07-16T08:44','Depot Samarinda',1326,1360,14.28,14.30,614700,629000,'SL-40009','Completed'),
-    r_ld('LD-010','u2','t1','2026-07-17T07:50','2026-07-17T08:18','Depot Samarinda',1717,1750,13.86,13.90,493050,506950,'SL-40010','Draft'),
-  ],
-  inspectionAfter:[
-    r_ia('IA-001','LD-001','2026-07-10T09:05','Good','SL-40001','Seal terpasang rapi'),
-    r_ia('IA-002','LD-002','2026-07-10T10:20','Good','SL-40002',''),
-    r_ia('IA-003','LD-003','2026-07-11T09:15','Good','SL-40003',''),
-    r_ia('IA-004','LD-004','2026-07-11T11:00','Good','SL-40004',''),
-    r_ia('IA-005','LD-005','2026-07-12T08:45','Good','SL-40005',''),
-    r_ia('IA-006','LD-006','2026-07-13T09:35','Reject','SL-40006','Seal retak saat pengecekan akhir, unit ditahan sementara'),
-    r_ia('IA-007','LD-007','2026-07-14T09:50','Good','SL-40007',''),
-    r_ia('IA-008','LD-008','2026-07-15T09:25','Good','SL-40008',''),
-    r_ia('IA-009','LD-009','2026-07-16T08:55','Good','SL-40009',''),
-  ],
-  receiving:[
-    r_rc('RC-001','LD-001','t3','2026-07-10T14:10',800,844,15.40,15.58,'SL-40001'),
-    r_rc('RC-002','LD-002','t3','2026-07-10T15:30',844,895,17.85,17.97,'SL-40002'),
-    r_rc('RC-003','LD-003','t4','2026-07-11T13:50',600,665,22.75,22.58,'SL-40099'),
-    r_rc('RC-004','LD-004','t3','2026-07-11T16:20',895,939,15.40,15.48,'SL-40004'),
-    r_rc('RC-005','LD-005','t4','2026-07-12T13:15',665,707,14.70,14.60,'SL-40005'),
-    r_rc('RC-006','LD-006','t3','2026-07-13T13:40',939,992,18.55,19.20,'SL-40006'),
-    r_rc('RC-007','LD-007','t4','2026-07-14T14:40',707,750,15.05,15.95,'SL-40007'),
-    r_rc('RC-008','LD-008','t3','2026-07-15T14:05',992,1057,22.75,22.50,'SL-40008'),
+  shipments:[
+    {id:'SHP-260718-001',preId:'PRE-260718-01',dest:'RF',unitCode:'FT-021',plate:'BM 8121 AA',driver:'Ari Pratama',transporter:'PT Sinar Logistik',request:32000,flowStart:418240,flowEnd:450210,total:31970,soundingBefore:12.420,soundingAfter:44.390,seals:['SL88021','SL88022','SL88023','SL88024'],status:'IN_TRANSIT',dispatchAt:'2026-07-18 09:15',eta:'2026-07-18 13:30',afterCondition:'Good',validation:null},
+    {id:'SHP-260718-002',preId:'PRE-260718-02',dest:'MILL',unitCode:'FT-034',plate:'BM 9034 QK',driver:'Rian Saputra',transporter:'PT Trans Energi',request:24000,flowStart:450210,flowEnd:474205,total:23995,soundingBefore:8.340,soundingAfter:32.335,seals:['SL88031','SL88032','SL88033','SL88034'],status:'IN_TRANSIT',dispatchAt:'2026-07-18 10:02',eta:'2026-07-18 14:10',afterCondition:'Good',validation:null},
+    {id:'SHP-260717-009',preId:'PRE-260717-09',dest:'MAINTANK',unitCode:'FT-017',plate:'BM 7710 LC',driver:'Dedi Kurniawan',transporter:'PT Sinar Logistik',request:16000,flowStart:389050,flowEnd:405048,total:15998,soundingBefore:5.200,soundingAfter:21.198,seals:['SL87971','SL87972','SL87973','SL87974'],status:'RECEIVED',dispatchAt:'2026-07-17 15:20',eta:'2026-07-17 18:10',afterCondition:'Good',validation:{received:15997,diff:-1,pct:0.00625,tolerance:1.5998,volumePass:true,sealPass:true,identityPass:true,risk:'LOW',time:'2026-07-17 18:22'}},
+    {id:'SHP-260717-008',preId:'PRE-260717-08',dest:'RF',unitCode:'FT-008',plate:'BM 6628 TR',driver:'Bagus Ramadhan',transporter:'PT Multi Angkut',request:32000,flowStart:357030,flowEnd:389050,total:32020,soundingBefore:10.100,soundingAfter:42.120,seals:['SL87961','SL87962','SL87963','SL87964'],status:'HOLD',dispatchAt:'2026-07-17 12:45',eta:'2026-07-17 16:30',afterCondition:'Good',validation:{received:31972,diff:-48,pct:0.1499,tolerance:3.202,volumePass:false,sealPass:false,identityPass:true,risk:'CRITICAL',time:'2026-07-17 16:51',notes:'Seal 3 tidak sesuai dan kehilangan volume melewati toleransi.'}},
+    {id:'SHP-260718-003',preId:'PRE-260718-03',dest:'MAINTANK',unitCode:'FT-041',plate:'BM 9145 RX',driver:'Yusuf Maulana',transporter:'PT Trans Energi',request:16000,flowStart:474205,flowEnd:490201,total:15996,soundingBefore:6.105,soundingAfter:22.101,seals:[],status:'AWAITING_AFTER',dispatchAt:null,eta:null,afterCondition:null,validation:null}
   ],
   discharge:[
-    r_dc('DC-001','v1','t1','2026-07-11T06:00','2026-07-11T14:30',8500,3100,1200,2830,1850.40,1846.90,'SD-20001','Completed'),
-    r_dc('DC-002','v2','t2','2026-07-13T07:15','2026-07-13T16:40',9200,2400,1254,4020,2705.10,2698.60,'SD-20002','Completed'),
-    r_dc('DC-003','v3','t1','2026-07-16T06:30','2026-07-16T13:10',6100,4300,2830,3550,720.00,718.40,'SD-20003','In Progress'),
-    r_dc('DC-004','v1','t2','2026-07-09T06:45','2026-07-09T15:20',7600,2950,900,3120,1420.30,1417.80,'SD-20004','Completed'),
-    r_dc('DC-005','v2','t1','2026-07-14T07:00','2026-07-14T16:10',8100,2600,1717,4520,1980.60,1975.20,'SD-20005','Completed'),
+    {id:'DC-260718-01',type:'Vessel → Shore Tank',vessel:'MT Nusantara 8',product:'HSD',obs:4485.650,at15:4459.820,mt:3740.55,lt:3681.47,status:'COMPLETED',time:'2026-07-18 05:45'},
+    {id:'DC-260718-02',type:'Shore Tank → Barge',vessel:'BG Ocean 12',product:'Biosolar B40',obs:1820.400,at15:1809.730,mt:1511.80,lt:1487.91,status:'IN_PROGRESS',time:'2026-07-18 11:15'}
   ],
-  shipLoading:[
-    r_sh('SH-001','t1','v1','2026-07-10T07:00','2026-07-10T15:40',3200,2100,900,2700,1650.20,1647.50,'SG-30001','Completed'),
-    r_sh('SH-002','t2','v2','2026-07-12T06:40','2026-07-12T16:20',4400,2600,1288,3610,2100.80,2096.40,'SG-30002','Completed'),
-    r_sh('SH-003','t1','v3','2026-07-15T07:10','2026-07-15T13:50',2600,1900,1717,2570,980.50,978.90,'SG-30003','Completed'),
-    r_sh('SH-004','t2','v1','2026-07-17T06:50',null,3900,null,1360,2280,1320.00,null,'SG-30004','In Progress'),
-    r_sh('SH-005','t1','v2','2026-07-08T06:30','2026-07-08T14:50',3400,2050,700,2600,1750.30,1744.10,'SG-30005','Completed'),
-  ],
-  validationApprovals:{}, // { loadingId: {by, at, remarks} }
+  audit:[]
 };
-function r_ip(id,dt,unit,result,reason,seal){return {id,dt,unit,result,reason,seal,inspector:'inspector1@ptsi.co.id',dept:'d1',bu:'bu1'};}
-function r_ld(id,unit,tank,dtStart,dtEnd,dest,sBefore,sAfter,volSound,volFlow,fmStart,fmEnd,seal,status){
-  return {id,unit,tank,dtStart,dtEnd,dest,sBefore,sAfter,volSound,volFlow,fmStart,fmEnd,seal,status,operator:'operator1@ptsi.co.id',dept:'d1',bu:'bu1'};
+const $ = s => document.querySelector(s);
+const fmt = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:3}).format(Number(n||0));
+const nowText = () => new Date().toLocaleString('id-ID',{hour12:false});
+function role(){return ROLE_CONFIG[state.role]}
+function siteScope(){return DEST_ROLE[state.role] || null}
+function allowedShipments(){const s=siteScope(); return s?state.shipments.filter(x=>x.dest===s):state.shipments}
+function badge(status){
+  const m={IN_TRANSIT:['info','IN TRANSIT'],RECEIVED:['good','RECEIVED'],HOLD:['bad','HOLD / INVESTIGATE'],AWAITING_AFTER:['warn','WAIT AFTER INSPECTION'],PASS:['good','PASS'],COMPLETED:['good','COMPLETED'],IN_PROGRESS:['warn','IN PROGRESS']};
+  const x=m[status]||['neutral',status]; return `<span class="badge ${x[0]}">${x[1]}</span>`;
 }
-function r_ia(id,loadingId,dt,result,seal,remarks){return {id,loadingId,dt,result,seal,remarks,inspector:'inspector1@ptsi.co.id',dept:'d1',bu:'bu1'};}
-function r_rc(id,loadingId,tank,dt,sBefore,sAfter,volSound,volFlow,seal){
-  return {id,loadingId,tank,dt,sBefore,sAfter,volSound,volFlow,seal,receiver:'receiving1@ptsi.co.id',dept:'d6',bu:'bu3'};
+function audit(action,detail){state.audit.unshift({time:nowText(),role:role().label,action,detail});}
+function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
+function setupRoles(){
+  $('#roleSelect').innerHTML=Object.entries(ROLE_CONFIG).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+  $('#roleSelect').value=state.role;
+  $('#roleSelect').onchange=e=>{state.role=e.target.value;state.page='dashboard';renderAll();};
 }
-function r_dc(id,vessel,tank,dtStart,dtEnd,vBefore,vAfter,tBefore,tAfter,volVessel,volTank,seal,status){
-  return {id,vessel,tank,dtStart,dtEnd,vBefore,vAfter,tBefore,tAfter,volVessel,volTank,seal,status,surveyor:'surveyor1@ptsi.co.id',dept:'d5',bu:'bu2'};
-}
-function r_sh(id,tank,vessel,dtStart,dtEnd,tBefore,tAfter,vBefore,vAfter,volTank,volVessel,seal,status){
-  return {id,tank,vessel,dtStart,dtEnd,tBefore,tAfter,vBefore,vAfter,volTank,volVessel,seal,status,surveyor:'surveyor1@ptsi.co.id',dept:'d5',bu:'bu2'};
-}
-function DB_LD(id){ return DB.loading.find(l=>l.id===id); }
-
-/* ---------------- State ---------------- */
-const state = { role:'admin', module:'dashboard', filters:{}, idSeq:{ip:11,ia:10,ld:11,rc:9,dc:6,sh:6} };
-
-/* ---------------- Helpers ---------------- */
-function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function fmtDate(iso,opts){
-  if(!iso) return '—';
-  const d = new Date(iso);
-  const base = {day:'2-digit',month:'short',year:'numeric'};
-  const withTime = opts&&opts.time!==false;
-  return d.toLocaleString('id-ID', withTime? {...base,hour:'2-digit',minute:'2-digit'} : base);
-}
-function fmtNum(n,dec=2){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
-function findUser(email){ return USERS.find(u=>u.email===email); }
-function unitById(id){ return UNITS.find(u=>u.id===id); }
-function vesselById(id){ return VESSELS.find(v=>v.id===id); }
-function tankById(id){ return TANKS.find(t=>t.id===id); }
-function productById(id){ return PRODUCTS.find(p=>p.id===id); }
-function deptById(id){ return DEPTS.find(d=>d.id===id); }
-function buById(id){ return BUS.find(b=>b.id===id); }
-
-function currentRole(){ return ROLE_CONFIG[state.role]; }
-function currentUser(){ return USERS.find(u=>u.role===state.role); }
-function hasAccess(moduleKey){ return currentRole().modules.includes(moduleKey); }
-
-function filterByScope(list){
-  const role = currentRole(), user = currentUser();
-  if(role.scope==='all') return list;
-  if(role.scope==='business_unit') return list.filter(r=>r.bu===user.bu);
-  if(role.scope==='department') return list.filter(r=>r.dept===user.dept);
-  if(role.scope==='own') return list.filter(r=>(r.inspector||r.operator||r.surveyor||r.receiver)===user.email);
-  if(role.scope==='cross_validation') return list.filter(r=>r.dept===user.dept || (r.inspector||r.operator||r.surveyor||r.receiver)===user.email);
-  return list;
-}
-
-function toast(msg){
-  const wrap = document.getElementById('toastWrap');
-  const el = document.createElement('div');
-  el.className='toast'; el.textContent=msg;
-  wrap.appendChild(el);
-  setTimeout(()=>el.remove(), 3600);
-}
-
-function downloadCSV(filename, rows, columns){
-  const header = columns.map(c=>c.label).join(',');
-  const body = rows.map(r=>columns.map(c=>{
-    let v = c.get(r);
-    v = (v==null?'':String(v)).replace(/"/g,'""');
-    return /[",\n]/.test(v) ? `"${v}"` : v;
-  }).join(',')).join('\n');
-  const blob = new Blob([header+'\n'+body], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download=filename; a.click();
-  URL.revokeObjectURL(url);
-  toast('File CSV diunduh: '+filename);
-}
-
-function badge(text,type){ return `<span class="badge badge-${type}">${esc(text)}</span>`; }
-function resultBadge(result){
-  if(result==='Good') return badge('Good','good');
-  if(result==='Reject') return badge('Reject','reject');
-  return badge(result,'draft');
-}
-function statusBadge(status){
-  const map = {Completed:'good', Draft:'draft', 'In Progress':'progress', Matched:'good', Discrepancy:'reject', Pending:'pending'};
-  return badge(status, map[status]||'draft');
-}
-function sealChip(match){
-  return match
-    ? `<span class="seal-chip seal-ok">${icon('lock',14)} Cocok</span>`
-    : `<span class="seal-chip seal-bad">${icon('unlock',14)} Tidak Cocok</span>`;
-}
-function soundStrip(before,after,max=2400){
-  if(before==null||after==null) return '<span class="cell-sub">—</span>';
-  const pB = Math.min(100, (before/max)*100), pA = Math.min(100, (after/max)*100);
-  return `<div class="sound-strip">
-    <div class="sound-track"><div class="sound-fill" style="left:${Math.min(pB,pA)}%; width:${Math.abs(pA-pB)}%"></div></div>
-    <div class="sound-labels"><span>${before}mm</span><span>→ ${after}mm</span></div>
-  </div>`;
-}
-
-/* ---------------- Validation engine ---------------- */
-function computeValidation(){
-  const completedLoads = DB.loading.filter(l=>l.status==='Completed');
-  return completedLoads.map(l=>{
-    const rc = DB.receiving.find(r=>r.loadingId===l.id);
-    const approval = DB.validationApprovals[l.id];
-    if(!rc){
-      return {loadingId:l.id, receivingId:null, load:l, rc:null, volLoad:l.volFlow, volRecv:null, varianceKl:null, variancePct:null, sealMatch:null, status:'Pending', approval};
-    }
-    const sealMatch = rc.seal === l.seal;
-    const varianceKl = +(rc.volFlow - l.volFlow).toFixed(2);
-    const variancePct = +((varianceKl/l.volFlow)*100).toFixed(2);
-    let status = 'Matched';
-    if(!sealMatch) status='Discrepancy';
-    else if(Math.abs(variancePct) > 0.5) status='Discrepancy';
-    return {loadingId:l.id, receivingId:rc.id, load:l, rc, volLoad:l.volFlow, volRecv:rc.volFlow, varianceKl, variancePct, sealMatch, status, approval};
-  });
-}
-
-/* ---------------- Sidebar & Topbar ---------------- */
-function renderSidebar(){
-  const role = currentRole();
-  const groups = NAV_GROUPS.map(g=>{
-    const items = g.items.filter(it=>role.modules.includes(it.key));
-    if(!items.length) return '';
-    return `<div class="nav-group">
-      <div class="nav-group-label">${esc(g.label)}</div>
-      ${items.map(it=>`<a href="#" class="nav-item ${state.module===it.key?'active':''}" data-nav="${it.key}">${icon(it.icon)}<span>${esc(it.label)}</span></a>`).join('')}
-    </div>`;
+function renderNav(){
+  const allowed=role().modules;
+  $('#nav').innerHTML=NAV.map(g=>{
+    const items=g.items.filter(i=>allowed.includes(i[0])); if(!items.length)return '';
+    return `<div class="nav-label">${g.label}</div>${items.map(i=>`<a href="#" class="nav-item ${state.page===i[0]?'active':''}" data-page="${i[0]}"><span class="nav-icon">${i[1]}</span><span>${i[2]}</span>${i[0]==='receiving'?`<span class="nav-badge">${allowedShipments().filter(x=>x.status==='IN_TRANSIT').length}</span>`:''}</a>`).join('')}`;
   }).join('');
-
-  const roleOptions = Object.keys(ROLE_CONFIG).map(k=>`<option value="${k}" ${state.role===k?'selected':''}>${esc(ROLE_CONFIG[k].label)}</option>`).join('');
-  const user = currentUser();
-  const dept = deptById(user.dept);
-  const bu = user.bu ? buById(user.bu).name : 'Seluruh Business Unit';
-  const scopeLabelMap = {own:'Data Milik Sendiri', department:'Lingkup Departemen', business_unit:'Lingkup Business Unit', cross_validation:'Cross-Divisi (Validasi)', all:'Seluruh Organisasi'};
-
-  document.getElementById('sidebar').innerHTML = `
-    <div class="brand">
-      <div class="brand-mark">
-        <div class="brand-badge">PT</div>
-        <div class="brand-text">
-          <div class="brand-title">Custody Ledger</div>
-          <div class="brand-sub">PEC-Tech Service Indonesia</div>
-        </div>
-      </div>
-    </div>
-    <nav class="nav">${groups}</nav>
-    <div class="sidebar-foot">
-      <div class="role-switch">
-        <label>Masuk sebagai (simulasi)</label>
-        <select id="roleSelect">${roleOptions}</select>
-        <div class="role-meta">
-          <div><b>${esc(user.name)}</b></div>
-          <div>${esc(dept.name)} · ${esc(bu)}</div>
-          <span class="scope-pill">${esc(scopeLabelMap[role.scope])}</span>
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('roleSelect').addEventListener('change', e=>{
-    state.role = e.target.value;
-    if(!hasAccess(state.module)) state.module='dashboard';
-    renderSidebar(); renderTopbar(); renderMain();
-    document.getElementById('sidebar').classList.remove('open');
-  });
-  document.querySelectorAll('[data-nav]').forEach(el=>{
-    el.addEventListener('click', e=>{
-      e.preventDefault();
-      state.module = el.getAttribute('data-nav');
-      renderSidebar(); renderTopbar(); renderMain();
-      document.getElementById('sidebar').classList.remove('open');
-    });
-  });
+  document.querySelectorAll('.nav-item').forEach(a=>a.onclick=e=>{e.preventDefault();state.page=a.dataset.page;renderAll();closeMenu();});
 }
-
-function renderTopbar(){
-  const moduleLabel = [...NAV_GROUPS.flatMap(g=>g.items)].find(i=>i.key===state.module)?.label || 'Dashboard';
-  const user = currentUser();
-  const initials = user.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
-  document.getElementById('topbar').innerHTML = `
-    <div style="display:flex;align-items:center;">
-      <button id="menuToggle">${icon('menu',18)}</button>
-      <div class="crumb">Custody Ledger <span>›</span> <b>${esc(moduleLabel)}</b></div>
-    </div>
-    <div class="topbar-right">
-      <div class="clock">${fmtDate(new Date().toISOString())}</div>
-      <div class="user-chip">
-        <div class="user-avatar">${esc(initials)}</div>
-        <div>
-          <div class="user-chip-name">${esc(user.name)}</div>
-          <div class="user-chip-role">${esc(ROLE_CONFIG[user.role].label)}</div>
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('menuToggle').addEventListener('click',()=>{
-    document.getElementById('sidebar').classList.toggle('open');
-  });
+function renderIdentity(){
+  $('#roleScope').innerHTML=`<b style="color:var(--muted)">${role().site}</b><br>${role().scope}`;
+  $('#userName').textContent=role().label; $('#userRole').textContent=role().site; $('#avatar').textContent=role().label.split(' ').map(x=>x[0]).slice(0,2).join('');
 }
-
-/* ---------------- Modal ---------------- */
-function openModal(title, bodyHtml, onSubmit){
-  document.getElementById('modalRoot').innerHTML = `
-    <div class="overlay" id="overlay">
-      <div class="modal">
-        <div class="modal-head">
-          <div class="modal-title">${esc(title)}</div>
-          <button class="modal-close" id="modalClose">${icon('x',18)}</button>
-        </div>
-        <form id="modalForm">
-          <div class="modal-body">${bodyHtml}</div>
-          <div class="modal-foot">
-            <button type="button" class="btn btn-ghost" id="modalCancel">Batal</button>
-            <button type="submit" class="btn btn-primary">${icon('check',15)} Simpan</button>
-          </div>
-        </form>
-      </div>
-    </div>`;
-  const close = ()=>{ document.getElementById('modalRoot').innerHTML=''; };
-  document.getElementById('modalClose').addEventListener('click', close);
-  document.getElementById('modalCancel').addEventListener('click', close);
-  document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') close(); });
-  document.getElementById('modalForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const data = Object.fromEntries(fd.entries());
-    onSubmit(data);
-    close();
-  });
+function renderTicker(){
+  const items=state.shipments.slice(0,5).map(s=>`<span class="ticker-item"><span>${s.id}</span><b>${DEST[s.dest]}</b><span>${fmt(s.total)} L</span><span class="${s.status==='HOLD'?'text-bad':s.status==='RECEIVED'?'text-good':'text-blue'}">${s.status.replaceAll('_',' ')}</span></span>`);
+  $('#tickerTrack').innerHTML=[...items,...items].join('');
 }
-
-/* ---------------- Filter bar ---------------- */
-function filterBar(moduleKey, fields, onChange){
-  const f = state.filters[moduleKey] || (state.filters[moduleKey]={});
-  const html = `<div class="filter-bar">
-    ${fields.map(fl=>{
-      if(fl.type==='search'){
-        return `<div class="filter-field grow"><label>${esc(fl.label)}</label><input type="text" data-f="${fl.key}" value="${esc(f[fl.key]||'')}" placeholder="${esc(fl.placeholder||'Cari...')}"></div>`;
-      }
-      if(fl.type==='date'){
-        return `<div class="filter-field"><label>${esc(fl.label)}</label><input type="date" data-f="${fl.key}" value="${esc(f[fl.key]||'')}"></div>`;
-      }
-      if(fl.type==='select'){
-        return `<div class="filter-field"><label>${esc(fl.label)}</label><select data-f="${fl.key}">
-          <option value="">Semua</option>
-          ${fl.options.map(o=>`<option value="${esc(o)}" ${f[fl.key]===o?'selected':''}>${esc(o)}</option>`).join('')}
-        </select></div>`;
-      }
-      return '';
-    }).join('')}
-    <button class="btn btn-sm btn-ghost" id="filterReset">${icon('filter',14)} Reset</button>
+function pageTitle(title,desc,actions=''){return `<div class="page-head"><div><div class="page-title">${title}</div><div class="page-desc">${desc}</div></div><div class="head-actions">${actions}</div></div>`}
+function dashboard(){
+  const ships=allowedShipments(); const today=ships.filter(s=>s.id.includes('260718')); const transit=ships.filter(s=>s.status==='IN_TRANSIT').length; const holds=ships.filter(s=>s.status==='HOLD').length; const received=ships.filter(s=>s.status==='RECEIVED');
+  const volume=today.reduce((a,b)=>a+(b.total||0),0); const pass=received.filter(s=>s.validation?.volumePass&&s.validation?.sealPass).length;
+  const avgLoss=received.length?received.reduce((a,b)=>a+Math.abs(b.validation?.pct||0),0)/received.length:0;
+  const siteLabel=siteScope()?DEST[siteScope()]:'All Network';
+  return `${pageTitle('Live Operations Dashboard',`Pemantauan custody chain secara real-time untuk ${siteLabel}. Status unit, volume, seal, receiving dan indikasi anomali ditampilkan dalam satu layar.`,'<button class="btn" onclick="renderAll()">Refresh Live Data</button>')}
+  <div class="grid-kpi">
+    ${kpi('Volume dispatch hari ini',fmt(volume)+' L','Akumulasi flowmeter final','78')}
+    ${kpi('Unit in transit',transit,'Sedang menuju receiving site',transit?'64':'15')}
+    ${kpi('Receiving verified',pass,'Volume + seal + identity sesuai','88')}
+    ${kpi('Exception / hold',holds,'Butuh investigasi custody',holds?'72':'8',holds?'text-bad':'')}
+    ${kpi('Avg. variance',fmt(avgLoss)+'%','Batas toleransi: 0,01%','42',avgLoss>.01?'text-bad':'text-good')}
+    ${kpi('Data integrity','99.94%','Sinkronisasi custody packet','96','text-good')}
+  </div>
+  <div class="layout-2">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Volume Movement — 24 Hours</div><div class="panel-sub">Dispatch vs actual receiving</div></div><div class="legend"><span class="lg-orange">Dispatch</span><span class="lg-cyan">Receiving</span></div></div><div class="panel-body"><div class="chart-wrap"><div class="chart-grid"></div><svg class="chart-svg" viewBox="0 0 800 240" preserveAspectRatio="none"><defs><linearGradient id="area1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f0a43a" stop-opacity=".22"/><stop offset="1" stop-color="#f0a43a" stop-opacity="0"/></linearGradient></defs><path d="M0 195 C60 185,75 165,120 172 S190 120,235 132 S305 88,355 105 S425 55,475 76 S550 43,610 60 S720 28,800 42 L800 220 L0 220 Z" fill="url(#area1)"/><path d="M0 195 C60 185,75 165,120 172 S190 120,235 132 S305 88,355 105 S425 55,475 76 S550 43,610 60 S720 28,800 42" fill="none" stroke="#f0a43a" stroke-width="3"/><path d="M0 206 C72 202,85 180,130 184 S200 141,250 150 S320 109,370 117 S440 78,493 91 S565 68,630 74 S730 55,800 63" fill="none" stroke="#50d5c7" stroke-width="2.5" stroke-dasharray="7 5"/></svg><div class="chart-labels"><span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span></div></div></div></div>
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Live Site Performance</div><div class="panel-sub">Custody validation by destination</div></div><span class="badge good">NETWORK ONLINE</span></div><div class="panel-body"><div class="market-list">
+      ${sitePerf('Riau Fiber','2 active','99.85%','-0.15%',false)}${sitePerf('Mill','1 active','99.98%','-0.02%',true)}${sitePerf('Maintank','1 pending','99.99%','-0.01%',true)}${sitePerf('Fuel Blending','3 process','100.00%','SOURCE',true)}
+    </div></div></div>
+  </div>
+  <div class="layout-2">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Active Custody Chain</div><div class="panel-sub">Status pengiriman yang sedang berjalan</div></div><button class="btn btn-sm" onclick="goPage('shipment_monitor')">Open monitor</button></div><div class="panel-body flush">${shipmentTable(ships.slice(0,6),true)}</div></div>
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Risk & Exception Feed</div><div class="panel-sub">Prioritas pemeriksaan berdasarkan mismatch</div></div></div><div class="panel-body">${riskFeed(ships)}</div></div>
   </div>`;
-  setTimeout(()=>{
-    document.querySelectorAll('[data-f]').forEach(el=>{
-      el.addEventListener('input', ()=>{ f[el.getAttribute('data-f')] = el.value; onChange(); });
-      el.addEventListener('change', ()=>{ f[el.getAttribute('data-f')] = el.value; onChange(); });
-    });
-    const rb = document.getElementById('filterReset');
-    if(rb) rb.addEventListener('click', ()=>{ state.filters[moduleKey]={}; onChange(); });
-  },0);
-  return html;
 }
-function applyDateFilter(list, f, dateField){
-  return list.filter(r=>{
-    const val = r[dateField]; if(!val) return true;
-    const day = val.slice(0,10);
-    if(f.from && day < f.from) return false;
-    if(f.to && day > f.to) return false;
-    return true;
-  });
+function kpi(label,value,sub,w,cls=''){return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${sub}</div><div class="mini-line"><span style="width:${w}%"></span></div></div>`}
+function sitePerf(name,meta,value,delta,good){return `<div class="market-row"><div><div class="market-name">${name}</div><div class="market-meta">${meta}</div></div><div class="market-value">${value}</div><div class="market-delta ${good?'text-good':'text-bad'}">${delta}</div></div>`}
+function riskFeed(ships){
+  const risky=ships.filter(s=>s.status==='HOLD' || s.validation&&!s.validation.volumePass);
+  if(!risky.length)return `<div class="alert"><div class="alert-title text-good">Tidak ada exception aktif</div><div class="alert-meta">Semua custody packet dalam scope role saat ini berada dalam kondisi normal.</div></div>`;
+  return risky.map(s=>`<div class="alert"><div class="alert-top"><div class="alert-title">${s.id} · ${s.unitCode}</div><span class="badge bad">${s.validation?.risk||'HIGH'}</span></div><div class="alert-meta">${DEST[s.dest]} · selisih ${fmt(s.validation?.diff||0)} L · seal ${s.validation?.sealPass?'match':'mismatch'}<br>${s.validation?.notes||'Perlu review data receiving.'}</div></div>`).join('');
 }
-function applySearch(list, f, fields){
-  if(!f.q) return list;
-  const q = f.q.toLowerCase();
-  return list.filter(r=>fields.some(fn=>String(fn(r)||'').toLowerCase().includes(q)));
+function shipmentTable(ships,compact=false){
+  if(!ships.length)return `<div style="padding:25px;color:var(--dim);text-align:center">Tidak ada shipment dalam scope akses ini.</div>`;
+  return `<div class="${compact?'':'table-wrap'}"><table><thead><tr><th>Shipment</th><th>Destination</th><th>Unit</th><th>Driver / Transporter</th><th>Dispatch Volume</th><th>Seal</th><th>Status</th><th>Variance</th></tr></thead><tbody>${ships.map(s=>`<tr><td><div class="cell-main mono">${s.id}</div><div class="cell-sub">${s.dispatchAt||'Belum dispatch'}</div></td><td>${DEST[s.dest]}</td><td><div class="cell-main">${s.unitCode}</div><div class="cell-sub">${s.plate}</div></td><td><div>${s.driver}</div><div class="cell-sub">${s.transporter}</div></td><td class="mono">${fmt(s.total)} L</td><td>${s.seals.length?`<span class="badge good">${s.seals.length} VERIFIED</span>`:'<span class="badge warn">PENDING</span>'}</td><td>${badge(s.status)}</td><td class="mono ${s.validation&&!s.validation.volumePass?'text-bad':'text-good'}">${s.validation?fmt(s.validation.diff)+' L':'—'}</td></tr>`).join('')}</tbody></table></div>`;
 }
-
-/* ---------------- Dashboard ---------------- */
-function renderDashboard(){
-  const todayStr = '2026-07-17';
-  const loadToday = filterByScope(DB.loading).filter(l=>l.dtStart.slice(0,10)===todayStr).length;
-  const recvToday = filterByScope(DB.receiving).filter(r=>r.dt.slice(0,10)===todayStr).length;
-  const thisMonth = '2026-07';
-  const rejects = filterByScope(DB.inspectionPre).filter(r=>r.result==='Reject' && r.dt.slice(0,7)===thisMonth).length
-                + filterByScope(DB.inspectionAfter).filter(r=>r.result==='Reject' && (r.dt||'').slice(0,7)===thisMonth).length;
-  const valAll = computeValidation();
-  const discrepancy = valAll.filter(v=>v.status==='Discrepancy').length;
-
-  const kpis = [
-    {label:'Loading Hari Ini', value:loadToday, sub:'17 Jul 2026', color:'var(--amber)'},
-    {label:'Receiving Hari Ini', value:recvToday, sub:'17 Jul 2026', color:'var(--teal)'},
-    {label:'Inspeksi Reject', value:rejects, sub:'Bulan berjalan', color:'var(--red)'},
-    {label:'Validasi Discrepancy', value:discrepancy, sub:'Perlu tindak lanjut', color:'var(--blue)'},
-  ];
-
-  // Recent activity merge
-  const acts = [];
-  DB.inspectionPre.forEach(r=>acts.push({dt:r.dt, text:`Inspeksi pre-loading unit <b>${unitById(r.unit).plate}</b>`, status:r.result}));
-  DB.loading.forEach(r=>acts.push({dt:r.dtStart, text:`Loading <b>${r.id}</b> — ${unitById(r.unit).plate}`, status:r.status}));
-  DB.receiving.forEach(r=>acts.push({dt:r.dt, text:`Receiving <b>${r.id}</b> ref. ${r.loadingId}`, status:'Completed'}));
-  DB.discharge.forEach(r=>acts.push({dt:r.dtStart, text:`Discharge <b>${r.id}</b> — ${vesselById(r.vessel).name}`, status:r.status}));
-  DB.shipLoading.forEach(r=>acts.push({dt:r.dtStart, text:`Loading kapal <b>${r.id}</b> — ${vesselById(r.vessel).name}`, status:r.status}));
-  acts.sort((a,b)=> new Date(b.dt) - new Date(a.dt));
-  const dotColor = s=> s==='Reject'?'var(--red)': s==='Draft'||s==='In Progress'?'var(--amber)':'var(--green)';
-
-  // Follow-ups
-  const followups = [];
-  DB.inspectionPre.filter(r=>r.result==='Reject').forEach(r=>followups.push({title:`Unit ${unitById(r.unit).plate} — inspeksi pre-loading ditolak`, meta:`${r.reason} · ${fmtDate(r.dt)}`}));
-  DB.inspectionAfter.filter(r=>r.result==='Reject').forEach(r=>followups.push({title:`Loading ${r.loadingId} — inspeksi after-loading ditolak`, meta:`${r.remarks} · ${fmtDate(r.dt)}`}));
-  valAll.filter(v=>v.status==='Discrepancy').forEach(v=>followups.push({title:`Discrepancy volume — ${v.loadingId} vs ${v.receivingId}`, meta: v.sealMatch===false ? 'Nomor seal tidak cocok' : `Selisih volume ${fmtNum(v.variancePct,2)}%`}));
-
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div>
-        <div class="page-title">Dashboard Operasi</div>
-        <div class="page-desc">Ringkasan lintas divisi — data ditampilkan sesuai lingkup akses peran Anda saat ini.</div>
+function flowSteps(active){const steps=[['01','Before Inspection'],['02','Loading'],['03','After Inspection'],['04','Transport'],['05','Receiving']];return `<div class="flow-steps">${steps.map((s,i)=>`<div class="step ${i<active?'done':i===active?'active':''}"><div class="step-no">PHASE ${s[0]}</div><div class="step-title">${s[1]}</div><div class="step-status">${i<active?'Completed':i===active?'Current phase':'Waiting'}</div></div>`).join('')}</div>`}
+function preInspection(){
+  return `${pageTitle('Before Loading Inspection','Pemeriksaan unit kosong sebelum diizinkan masuk ke proses pengisian. Unit yang gagal tidak dapat dibuatkan loading record.')}${flowSteps(0)}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">New Unit Inspection</div><div class="panel-sub">Identity, physical condition dan empty seal status</div></div></div><div class="panel-body"><form id="preForm"><div class="form-grid">
+    ${field('Unit code','unitCode','FT-052')}${field('Nomor plat','plate','BM 9521 ZX')}${field('Nama driver','driver','')}${field('Transporter','transporter','')}
+    <div class="field"><label>Destination</label><select name="destination" required>${Object.entries(DEST).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+    ${selectField('Kondisi tanki','tank',['Good','Minor defect','Reject'])}${selectField('Valve / outlet','valve',['Good','Minor defect','Leak / Reject'])}${selectField('Manhole / cover','manhole',['Good','Minor defect','Reject'])}
+    ${selectField('Status seal unit kosong','emptySeal',['Open / verified','Seal lama masih terpasang','Tidak dapat diverifikasi'])}<div class="field span-2"><label>Kerusakan / temuan</label><input name="damage" placeholder="Tidak ada atau jelaskan temuan"></div><div class="field"><label>Inspection result</label><select name="result"><option>PASS</option><option>REJECT</option></select></div>
+  </div><div class="form-actions"><button type="reset" class="btn">Reset</button><button class="btn btn-primary">Save Inspection</button></div></form></div></div>
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Inspection Queue</div><div class="panel-sub">Latest unit readiness</div></div></div><div class="panel-body">${state.inspections.slice(0,6).map(i=>`<div class="alert"><div class="alert-top"><div class="alert-title">${i.unitCode} · ${i.plate}</div>${badge(i.result)}</div><div class="alert-meta">${DEST[i.destination]} · ${i.driver} · ${i.transporter}<br>${i.time}</div></div>`).join('')}</div></div></div>`;
+}
+function field(label,name,placeholder='',type='text'){return `<div class="field"><label>${label}</label><input type="${type}" name="${name}" placeholder="${placeholder}" required></div>`}
+function selectField(label,name,options){return `<div class="field"><label>${label}</label><select name="${name}">${options.map(x=>`<option>${x}</option>`).join('')}</select></div>`}
+function loadingPage(){
+  const eligible=state.inspections.filter(i=>i.result==='PASS');
+  return `${pageTitle('Loading Operation','Input data pengisian berdasarkan unit yang sudah lolos before loading inspection. Total flowmeter dihitung otomatis dari final minus initial.')}${flowSteps(1)}
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Create Loading Record</div><div class="panel-sub">Flowmeter, sounding dan requested volume</div></div><span class="badge info">SOURCE: FUEL BLENDING</span></div><div class="panel-body"><form id="loadingForm"><div class="form-grid">
+    <div class="field span-2"><label>Approved inspection</label><select name="preId" required>${eligible.map(i=>`<option value="${i.id}">${i.id} · ${i.unitCode} · ${i.plate} → ${DEST[i.destination]}</option>`).join('')}</select></div>
+    ${field('Requested volume (L)','request','32000','number')}${field('Flowmeter initial','flowStart','500000','number')}${field('Flowmeter final','flowEnd','532000','number')}${field('Sounding before','soundingBefore','10.250','number')}${field('Sounding after','soundingAfter','42.250','number')}
+    <div class="field"><label>Calculated flow volume</label><input id="calcFlow" value="0 L" readonly></div>
+    <div class="field span-4"><label>Loading remarks</label><textarea name="remarks" placeholder="Catatan proses pengisian, abnormal condition, stop/start atau informasi penting lain."></textarea></div>
+  </div><div class="form-actions"><button type="reset" class="btn">Reset</button><button class="btn btn-primary">Complete Loading</button></div></form></div></div>`;
+}
+function afterInspection(){
+  const waiting=state.shipments.filter(s=>s.status==='AWAITING_AFTER');
+  return `${pageTitle('After Loading Inspection','Final check setelah pengisian. Nomor segel yang disahkan pada tahap ini menjadi referensi utama receiving site.')}${flowSteps(2)}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">Finalize Unit & Seal</div><div class="panel-sub">Shipment baru terkirim ke customer setelah tahap ini PASS</div></div></div><div class="panel-body">${waiting.length?`<form id="afterForm"><div class="form-grid"><div class="field span-2"><label>Shipment waiting inspection</label><select name="shipmentId">${waiting.map(s=>`<option value="${s.id}">${s.id} · ${s.unitCode} · ${DEST[s.dest]}</option>`).join('')}</select></div>${field('Seal 1','seal1','SL88101')}${field('Seal 2','seal2','SL88102')}${field('Seal 3','seal3','SL88103')}${field('Seal 4','seal4','SL88104')}${selectField('Final tank condition','condition',['Good','Minor damage','Reject'])}<div class="field span-2"><label>Final remarks</label><input name="remarks" placeholder="Seal terpasang dan tanki aman"></div></div><div class="form-actions"><button class="btn btn-primary">PASS & Dispatch Custody Packet</button></div></form>`:`<div style="padding:25px;text-align:center;color:var(--dim)">Tidak ada loading record yang menunggu after inspection.</div>`}</div></div>
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Dispatch Rule</div><div class="panel-sub">Data yang dikunci setelah PASS</div></div></div><div class="panel-body"><div class="check-list">${['Unit code & plate','Driver & transporter','Flowmeter initial / final / total','Sounding before / after','4 nomor seal final','Destination & dispatch time'].map(x=>`<div class="check-row"><span class="check-name">${x}</span><span class="badge good">LOCKED</span></div>`).join('')}</div></div></div></div>`;
+}
+function shipmentMonitor(){return `${pageTitle('Shipment Monitor','Monitoring unit dari Fuel Blending sampai receiving. IT Admin dan Fuel SPV melihat seluruh jaringan; customer tidak memiliki menu ini.')}${shipmentTable(state.shipments)}`}
+function receivingPage(){
+  const site=siteScope(); const source=site?state.shipments.filter(s=>s.dest===site&&s.status==='IN_TRANSIT'):state.shipments.filter(s=>s.status==='IN_TRANSIT');
+  const defaultShip=source[0];
+  return `${pageTitle('Receiving Validation',site?`Validasi shipment masuk untuk ${DEST[site]}. Data sumber hanya ditampilkan sebagai custody packet yang memang ditujukan ke site ini.`:'Admin receiving console untuk seluruh customer.')} ${flowSteps(4)}
+  ${source.length?`<div class="panel"><div class="panel-head"><div><div class="panel-title">Incoming Shipment</div><div class="panel-sub">Bandingkan physical check dengan locked dispatch packet</div></div><span class="badge warn">TOLERANCE 0.01%</span></div><div class="panel-body"><form id="receivingForm"><div class="field" style="margin-bottom:13px"><label>Select shipment</label><select name="shipmentId" id="receivingShipment">${source.map(s=>`<option value="${s.id}">${s.id} · ${s.unitCode} · ${DEST[s.dest]}</option>`).join('')}</select></div><div id="dispatchPacket">${dispatchPacket(defaultShip)}</div><div style="height:14px"></div><div class="form-grid">
+    ${field('Unit code actual','unitCode',defaultShip?.unitCode||'')}${field('Nomor plat actual','plate',defaultShip?.plate||'')}${field('Nama driver actual','driver',defaultShip?.driver||'')}${field('Transporter actual','transporter',defaultShip?.transporter||'')}
+    ${field('Seal 1 actual','seal1',defaultShip?.seals?.[0]||'')}${field('Seal 2 actual','seal2',defaultShip?.seals?.[1]||'')}${field('Seal 3 actual','seal3',defaultShip?.seals?.[2]||'')}${field('Seal 4 actual','seal4',defaultShip?.seals?.[3]||'')}
+    ${field('Actual receiving volume (L)','received','31970','number')}${field('Receiving sounding before','soundBefore','8.200','number')}${field('Receiving sounding after','soundAfter','40.150','number')}${selectField('Physical damage','damage',['Tidak ada','Ada kerusakan ringan','Ada kerusakan serius'])}
+    <div class="field span-4"><label>Receiving remarks</label><textarea name="notes" placeholder="Catatan kondisi unit, seal, kebocoran, discrepancy atau kejadian lain."></textarea></div>
+  </div><div class="form-actions"><button class="btn btn-primary">Validate & Close Receiving</button></div></form></div></div>`:`<div class="panel"><div class="panel-body" style="padding:40px;text-align:center;color:var(--dim)">Tidak ada shipment in-transit yang tersedia untuk role/site ini.</div></div>`}`;
+}
+function dispatchPacket(s){if(!s)return '';return `<div class="readonly-card"><div class="readonly-grid"><div><div class="ro-label">Shipment</div><div class="ro-value mono">${s.id}</div></div><div><div class="ro-label">Destination</div><div class="ro-value">${DEST[s.dest]}</div></div><div><div class="ro-label">Dispatch volume</div><div class="ro-value mono">${fmt(s.total)} L</div></div><div><div class="ro-label">Tolerance 0.01%</div><div class="ro-value mono">± ${fmt(s.total*TOLERANCE_RATE)} L</div></div><div><div class="ro-label">Unit / Plate</div><div class="ro-value">${s.unitCode} · ${s.plate}</div></div><div><div class="ro-label">Driver</div><div class="ro-value">${s.driver}</div></div><div><div class="ro-label">Transporter</div><div class="ro-value">${s.transporter}</div></div><div><div class="ro-label">Locked seals</div><div class="ro-value mono">${s.seals.join(' · ')}</div></div></div></div>`}
+function siteHistory(){
+  const s=allowedShipments().filter(x=>['RECEIVED','HOLD'].includes(x.status));
+  return `${pageTitle('Receiving History','Riwayat receiving sesuai scope akses. Customer hanya melihat histori site sendiri.')}${shipmentTable(s)}`;
+}
+function validationPage(){
+  const evaluated=state.shipments.filter(s=>s.validation);
+  return `${pageTitle('Custody Validation','Ringkasan kontrol volume, seal dan identitas unit. Exception diprioritaskan untuk investigasi.')}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">Network Integrity Score</div><div class="panel-sub">Composite custody validation</div></div></div><div class="panel-body"><div class="validation-card"><div class="score-box"><div class="score-ring"><span>88%</span></div><div style="font-size:10.5px;color:var(--muted);margin-top:10px">1 critical exception dari ${evaluated.length} validation</div></div><div class="check-list">${check('Identity match','100%',true)}${check('Seal integrity','50%',false)}${check('Volume within 0.01%','50%',false)}${check('Receiving completeness','100%',true)}</div></div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Investigation Priority</div><div class="panel-sub">Rule-based anomaly signals</div></div></div><div class="panel-body">${riskFeed(state.shipments)}</div></div></div>
+  ${shipmentTable(evaluated)}`;
+}
+function check(name,value,good){return `<div class="check-row"><span class="check-name">${name}</span><span class="${good?'text-good':'text-bad'} mono">${value}</span></div>`}
+function dischargePage(type='discharge'){
+  const isBarge=type==='marine_loading';
+  return `${pageTitle(isBarge?'Loading to Barge':'Discharge Cargo',isBarge?'Pencatatan custody transfer dari shore tank ke barge/kapal.':'Pencatatan data discharge vessel ke terminal oleh SPV operator, termasuk observed volume, volume @15°C, metric ton dan long ton.')}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">${isBarge?'New Barge Loading Record':'New Discharge Record'}</div><div class="panel-sub">Custody data marine operation</div></div></div><div class="panel-body"><form id="marineForm" data-kind="${isBarge?'barge':'discharge'}"><div class="form-grid">
+    ${field(isBarge?'Barge / Vessel':'Vessel name','vessel','')}${field('Product','product','HSD')}${field('Observed volume (KL)','obs','0','number')}${field('Volume @15°C (KL)','at15','0','number')}${field('Metric tons (MT)','mt','0','number')}${field('Long tons (LT)','lt','0','number')}<div class="field span-2"><label>Custody reference</label><input name="reference" placeholder="B/L, CQD, tank ticket atau reference number"></div><div class="field span-4"><label>Remarks</label><textarea name="remarks" placeholder="Kondisi operasi, stop time, weather, tank transfer atau catatan custody lain."></textarea></div>
+  </div><div class="form-actions"><button class="btn btn-primary">Save Marine Record</button></div></form></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Latest Marine Operations</div><div class="panel-sub">Observed / @15 / mass summary</div></div></div><div class="panel-body">${state.discharge.map(d=>`<div class="alert"><div class="alert-top"><div class="alert-title">${d.id} · ${d.vessel}</div>${badge(d.status)}</div><div class="alert-meta">${d.type} · ${d.product}<br>OBS ${fmt(d.obs)} KL · @15 ${fmt(d.at15)} KL · ${fmt(d.mt)} MT · ${fmt(d.lt)} LT</div></div>`).join('')}</div></div></div>`;
+}
+function adminPage(){
+  const rows=Object.entries(ROLE_CONFIG).map(([k,v])=>`<tr><td><div class="cell-main">${v.label}</div><div class="cell-sub">${k}</div></td><td>${v.site}</td><td>${v.scope}</td><td class="mono">${v.modules.length}</td><td>${k==='it_admin'?'<span class="badge bad">ALL DATA</span>':'<span class="badge good">SCOPED</span>'}</td></tr>`).join('');
+  return `${pageTitle('Access & Data Governance','Model role-based access untuk mencegah customer melihat data operasional Fuel Blending yang tidak terkait dengan shipment mereka.')}
+  <div class="layout-3">${kpi('Configured roles','6','Field, SPV, 3 customer, IT','95')}${kpi('Customer isolation','3 sites','RF · Mill · Maintank','100','text-good')}${kpi('Audit events',state.audit.length,'Prototype in-memory log','45')}</div>
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Role Access Matrix</div><div class="panel-sub">Prinsip least privilege berdasarkan site dan fungsi</div></div></div><div class="panel-body flush"><div class="table-wrap" style="border:0;border-radius:0"><table><thead><tr><th>Role</th><th>Site</th><th>Data Scope</th><th>Modules</th><th>Privilege</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>
+  <div style="height:14px"></div><div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">Recommended Backend Controls</div><div class="panel-sub">Wajib saat prototype dipindah ke Firebase / API backend</div></div></div><div class="panel-body"><div class="check-list">${['Role claim divalidasi di server, bukan hanya hide menu','Customer query wajib dibatasi destination/site claim','Custody packet dikunci setelah after inspection PASS','Setiap perubahan seal dan volume masuk audit log immutable','Upload bukti foto disimpan dengan checksum dan metadata','Alert volume / seal mismatch tidak dapat dihapus oleh receiving operator'].map(x=>`<div class="check-row"><span class="check-name">${x}</span><span class="badge good">REQUIRED</span></div>`).join('')}</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Recent Prototype Audit</div><div class="panel-sub">Aktivitas selama sesi browser ini</div></div></div><div class="panel-body">${state.audit.length?state.audit.slice(0,8).map(a=>`<div class="alert"><div class="alert-title">${a.action}</div><div class="alert-meta">${a.time} · ${a.role}<br>${a.detail}</div></div>`).join(''):'<div style="padding:25px;text-align:center;color:var(--dim)">Belum ada aktivitas baru pada sesi ini.</div>'}</div></div></div>`;
+}
+function bindForms(){
+  const pre=$('#preForm'); if(pre)pre.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(pre));const id='PRE-'+Date.now().toString().slice(-8);state.inspections.unshift({...f,id,time:nowText()});audit('CREATE PRE-INSPECTION',`${id} · ${f.unitCode} · ${f.result}`);toast('Before loading inspection tersimpan');renderAll();};
+  const lf=$('#loadingForm'); if(lf){const calc=()=>{const f=new FormData(lf);const total=Number(f.get('flowEnd')||0)-Number(f.get('flowStart')||0);$('#calcFlow').value=fmt(total)+' L';};lf.addEventListener('input',calc);calc();lf.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(lf));const ins=state.inspections.find(i=>i.id===f.preId);const total=Number(f.flowEnd)-Number(f.flowStart);if(total<=0){toast('Flowmeter final harus lebih besar dari initial');return;}const id='SHP-'+Date.now().toString().slice(-9);state.shipments.unshift({id,preId:ins.id,dest:ins.destination,unitCode:ins.unitCode,plate:ins.plate,driver:ins.driver,transporter:ins.transporter,request:Number(f.request),flowStart:Number(f.flowStart),flowEnd:Number(f.flowEnd),total,soundingBefore:Number(f.soundingBefore),soundingAfter:Number(f.soundingAfter),seals:[],status:'AWAITING_AFTER',dispatchAt:null,eta:null,afterCondition:null,validation:null});audit('COMPLETE LOADING',`${id} · ${fmt(total)} L`);toast('Loading record selesai, menunggu after inspection');state.page='after_inspection';renderAll();};}
+  const af=$('#afterForm'); if(af)af.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(af));const s=state.shipments.find(x=>x.id===f.shipmentId);s.seals=[f.seal1,f.seal2,f.seal3,f.seal4].map(x=>x.trim());s.afterCondition=f.condition;s.status=f.condition==='Reject'?'HOLD':'IN_TRANSIT';s.dispatchAt=nowText();s.eta='Calculated by route service';audit('FINALIZE AFTER INSPECTION',`${s.id} · ${s.status} · seals locked`);toast('Custody packet terkunci dan dikirim ke destination');state.page='shipment_monitor';renderAll();};
+  const rf=$('#receivingForm'); if(rf){const sel=$('#receivingShipment');sel.onchange=()=>{const s=state.shipments.find(x=>x.id===sel.value);$('#dispatchPacket').innerHTML=dispatchPacket(s);autoFillReceiving(rf,s);};rf.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(rf));const s=state.shipments.find(x=>x.id===f.shipmentId);const received=Number(f.received);const diff=received-s.total;const tolerance=s.total*TOLERANCE_RATE;const volumePass=Math.abs(diff)<=tolerance;const given=[f.seal1,f.seal2,f.seal3,f.seal4].map(x=>x.trim().toUpperCase());const expected=s.seals.map(x=>x.trim().toUpperCase());const sealPass=JSON.stringify(given)===JSON.stringify(expected);const identityPass=f.unitCode.trim().toUpperCase()===s.unitCode.toUpperCase()&&f.plate.trim().toUpperCase()===s.plate.toUpperCase()&&f.driver.trim().toUpperCase()===s.driver.toUpperCase()&&f.transporter.trim().toUpperCase()===s.transporter.toUpperCase();const seriousDamage=f.damage==='Ada kerusakan serius';let risk='LOW';if(!sealPass||seriousDamage)risk='CRITICAL';else if(!volumePass||!identityPass)risk='HIGH';s.validation={received,diff,pct:Math.abs(diff)/s.total*100,tolerance,volumePass,sealPass,identityPass,risk,time:nowText(),notes:f.notes||''};s.status=(volumePass&&sealPass&&identityPass&&!seriousDamage)?'RECEIVED':'HOLD';audit('RECEIVING VALIDATION',`${s.id} · ${s.status} · variance ${fmt(diff)} L · risk ${risk}`);toast(s.status==='RECEIVED'?'Receiving valid dan shipment ditutup':'Exception terdeteksi — shipment masuk HOLD');state.page='site_history';renderAll();};}
+  const mf=$('#marineForm');if(mf)mf.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(mf));const kind=mf.dataset.kind;const id=(kind==='barge'?'BL-':'DC-')+Date.now().toString().slice(-8);state.discharge.unshift({id,type:kind==='barge'?'Shore Tank → Barge':'Vessel → Shore Tank',vessel:f.vessel,product:f.product,obs:Number(f.obs),at15:Number(f.at15),mt:Number(f.mt),lt:Number(f.lt),status:'COMPLETED',time:nowText()});audit('CREATE MARINE RECORD',`${id} · ${f.vessel}`);toast('Marine custody record tersimpan');renderAll();};
+}
+function autoFillReceiving(form,s){['unitCode','plate','driver','transporter'].forEach(k=>{if(form.elements[k])form.elements[k].value=s[k]});['seal1','seal2','seal3','seal4'].forEach((k,i)=>{if(form.elements[k])form.elements[k].value=s.seals[i]||''});if(form.elements.received)form.elements.received.value=s.total;}
+function goPage(p){if(role().modules.includes(p)){state.page=p;renderAll()}}
+window.goPage=goPage;
+function renderPage(){
+  const pages={dashboard,pre_inspection:preInspection,loading:loadingPage,after_inspection:afterInspection,shipment_monitor:shipmentMonitor,receiving:receivingPage,site_history:siteHistory,validation:validationPage,discharge:()=>dischargePage('discharge'),marine_loading:()=>dischargePage('marine_loading'),admin:adminPage};
+  if(!role().modules.includes(state.page))state.page='dashboard';
+  $('#content').innerHTML=(pages[state.page]||dashboard)();
+  $('#crumb').textContent=NAV.flatMap(x=>x.items).find(x=>x[0]===state.page)?.[2]||'Dashboard';
+  bindForms();
+}
+function renderAll(){renderIdentity();renderNav();renderTicker();renderPage();}
+function closeMenu(){$('#sidebar').classList.remove('open');$('#overlay').classList.remove('show')}
+$('#menuBtn').onclick=()=>{$('#sidebar').classList.toggle('open');$('#overlay').classList.toggle('show')};$('#overlay').onclick=closeMenu;
+setInterval(()=>$('#clock').textContent=new Date().toLocaleString('id-ID',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),1000);
+setupRoles();renderAll();
+</script>
+</body>
+</html> <!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fuel Custody Live — Integrated Fuel Blending & Receiving</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b0e; --bg2:#0d1217; --panel:#111820; --panel2:#151e27; --panel3:#1a2530;
+  --line:#23303b; --line2:#1b252e; --text:#edf2f5; --muted:#8d9aa5; --dim:#5f6c76;
+  --orange:#f0a43a; --orange2:#ffbf5c; --orangeSoft:#342715;
+  --green:#42d392; --greenSoft:#10291f; --red:#ff625a; --redSoft:#301817;
+  --blue:#5ea7ff; --blueSoft:#13243a; --cyan:#50d5c7; --cyanSoft:#102c2a;
+  --yellow:#ffd166; --purple:#b794f4;
+  --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans:'Inter', system-ui, sans-serif; --display:'Syne', var(--sans);
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px}
+body{min-height:100vh;background-image:radial-gradient(circle at 80% -10%,rgba(240,164,58,.08),transparent 28%),radial-gradient(circle at 10% 40%,rgba(80,213,199,.04),transparent 32%)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.mono{font-family:var(--mono)}
+.text-good{color:var(--green)} .text-bad{color:var(--red)} .text-warn{color:var(--orange)} .text-blue{color:var(--blue)}
+#app{display:flex;min-height:100vh}
+.sidebar{width:270px;position:fixed;left:0;top:0;bottom:0;background:rgba(13,18,23,.97);border-right:1px solid var(--line2);z-index:30;display:flex;flex-direction:column}
+.brand{padding:20px 18px 16px;border-bottom:1px solid var(--line2)}
+.brand-row{display:flex;gap:11px;align-items:center}
+.logo{width:38px;height:38px;border-radius:9px;background:linear-gradient(145deg,var(--orange2),#d17d15);display:grid;place-items:center;color:#1b1205;font-family:var(--display);font-weight:800;box-shadow:0 0 30px rgba(240,164,58,.12)}
+.brand-title{font-family:var(--display);font-size:15px;font-weight:800;letter-spacing:.02em}
+.brand-sub{font-family:var(--mono);font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.11em;margin-top:2px}
+.site-chip{margin-top:14px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 10px;display:flex;justify-content:space-between;align-items:center}
+.site-chip span:first-child{font-size:11px;color:var(--muted)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;box-shadow:0 0 0 4px rgba(66,211,146,.08);animation:pulse 1.8s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(66,211,146,0)}}
+.nav{padding:14px 10px;overflow:auto;flex:1}
+.nav-label{font-size:9.5px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;letter-spacing:.11em;padding:7px 9px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 10px;margin:2px 0;border-radius:8px;color:var(--muted);text-decoration:none;border:1px solid transparent;transition:.15s}
+.nav-item:hover{background:var(--panel);color:var(--text)}
+.nav-item.active{background:var(--orangeSoft);border-color:#5b4320;color:var(--orange2)}
+.nav-icon{width:23px;text-align:center;font-size:14px}.nav-badge{margin-left:auto;font:10px var(--mono);background:var(--panel3);padding:2px 7px;border-radius:20px}
+.sidebar-foot{padding:14px;border-top:1px solid var(--line2)}
+.sidebar-foot label{font:9.5px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);display:block;margin-bottom:6px}
+.role-select{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
+.role-scope{margin-top:8px;font-size:10.5px;color:var(--dim);line-height:1.5}
+.main-shell{margin-left:270px;min-width:0;flex:1}
+.topbar{height:62px;position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line2);background:rgba(8,11,14,.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.crumb{font:11px var(--mono);color:var(--dim)} .crumb b{color:var(--text)}
+.top-right{display:flex;align-items:center;gap:14px}.clock{font:11px var(--mono);color:var(--muted)}
+.user-chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:22px;padding:5px 10px 5px 5px}.avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--cyanSoft);color:var(--cyan);font:700 10px var(--mono)}
+.user-name{font-size:11.5px;font-weight:700}.user-role{font-size:9.5px;color:var(--dim)}
+.menu-btn{display:none;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 9px}
+.ticker{height:35px;border-bottom:1px solid var(--line2);background:#0b1015;overflow:hidden;white-space:nowrap;display:flex;align-items:center}
+.ticker-track{display:inline-flex;gap:28px;min-width:max-content;animation:ticker 32s linear infinite;font:10.5px var(--mono)}
+.ticker-item{display:flex;gap:7px;align-items:center;color:var(--muted)}.ticker-item b{color:var(--text)}
+@keyframes ticker{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+.content{padding:24px 26px 60px;max-width:1680px;margin:auto}
+.page-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.page-title{font:700 24px var(--display)}.page-desc{font-size:12.5px;color:var(--muted);margin-top:5px;max-width:780px;line-height:1.6}.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:9px 13px;font-size:12px;font-weight:700}.btn:hover{background:var(--panel3)}.btn-primary{background:var(--orange);border-color:var(--orange);color:#1b1205}.btn-danger{color:var(--red);border-color:#5b2926;background:var(--redSoft)}.btn-sm{padding:6px 9px;font-size:10.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.grid-kpi{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:11px;margin-bottom:14px}
+.kpi{border:1px solid var(--line2);background:linear-gradient(180deg,var(--panel),#0f151b);border-radius:var(--radius);padding:14px;min-height:111px;position:relative;overflow:hidden}.kpi:after{content:'';position:absolute;right:-25px;top:-25px;width:80px;height:80px;border-radius:50%;border:1px solid rgba(255,255,255,.035)}
+.kpi-label{font:9.5px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}.kpi-value{font:700 25px var(--display);margin-top:10px}.kpi-sub{font-size:10.5px;color:var(--muted);margin-top:4px}.mini-line{margin-top:9px;height:3px;background:var(--line2);border-radius:2px;overflow:hidden}.mini-line span{display:block;height:100%;border-radius:2px;background:var(--orange)}
+.layout-2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,.85fr);gap:14px;margin-bottom:14px}.layout-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.panel{border:1px solid var(--line2);background:var(--panel);border-radius:var(--radius);overflow:hidden}.panel-head{padding:13px 15px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center;gap:10px}.panel-title{font-size:12.5px;font-weight:800}.panel-sub{font-size:10px;color:var(--dim);margin-top:2px}.panel-body{padding:14px 15px}.panel-body.flush{padding:0}
+.chart-wrap{height:250px;position:relative}.chart-grid{position:absolute;inset:10px 0 25px 0;background-image:linear-gradient(to bottom,transparent 24%,rgba(255,255,255,.04) 25%,transparent 26%,transparent 49%,rgba(255,255,255,.04) 50%,transparent 51%,transparent 74%,rgba(255,255,255,.04) 75%,transparent 76%),linear-gradient(to right,transparent 19%,rgba(255,255,255,.035) 20%,transparent 21%,transparent 39%,rgba(255,255,255,.035) 40%,transparent 41%,transparent 59%,rgba(255,255,255,.035) 60%,transparent 61%,transparent 79%,rgba(255,255,255,.035) 80%,transparent 81%)}
+.chart-svg{position:absolute;inset:0;width:100%;height:100%}.chart-labels{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;color:var(--dim);font:9px var(--mono)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font:10px var(--mono);color:var(--muted)}.legend span:before{content:'';width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px}.lg-orange:before{background:var(--orange)}.lg-cyan:before{background:var(--cyan)}.lg-green:before{background:var(--green)}
+.market-list{display:flex;flex-direction:column}.market-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line2)}.market-row:last-child{border-bottom:none}.market-name{font-size:11.5px;font-weight:700}.market-meta{font:9.5px var(--mono);color:var(--dim);margin-top:2px}.market-value{font:700 12px var(--mono)}.market-delta{font:700 10px var(--mono);min-width:68px;text-align:right}
+.alert{padding:10px 11px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--bg2)}.alert:last-child{margin-bottom:0}.alert-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.alert-title{font-size:11.5px;font-weight:800}.alert-meta{font:9.5px var(--mono);color:var(--dim);margin-top:5px;line-height:1.5}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 8px;font:700 9.5px var(--mono);white-space:nowrap}.good{background:var(--greenSoft);color:var(--green)}.bad{background:var(--redSoft);color:var(--red)}.warn{background:var(--orangeSoft);color:var(--orange2)}.info{background:var(--blueSoft);color:var(--blue)}.neutral{background:var(--panel3);color:var(--muted)}
+.table-wrap{overflow:auto;border:1px solid var(--line2);border-radius:var(--radius);background:var(--panel)}table{width:100%;border-collapse:collapse;min-width:980px}th{background:var(--panel2);color:var(--dim);font:700 9.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:10px 11px;border-bottom:1px solid var(--line)}td{font-size:11.5px;padding:11px;border-bottom:1px solid var(--line2);vertical-align:middle}tbody tr:hover{background:rgba(255,255,255,.018)}tbody tr:last-child td{border-bottom:none}.cell-main{font-weight:700}.cell-sub{font:9.5px var(--mono);color:var(--dim);margin-top:3px}
+.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field.span-2{grid-column:span 2}.field.span-4{grid-column:1/-1}.field label{font:9.5px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.06em}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--bg2);color:var(--text);border-radius:7px;padding:9px 10px;outline:none}.field textarea{min-height:78px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#806030;box-shadow:0 0 0 3px rgba(240,164,58,.06)}.field .hint{font-size:9.5px;color:var(--dim)}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px;padding-top:13px;border-top:1px solid var(--line2)}
+.readonly-card{border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:12px}.readonly-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.ro-label{font:9px var(--mono);color:var(--dim);text-transform:uppercase}.ro-value{font-size:11.5px;font-weight:700;margin-top:3px}
+.flow-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}.step{position:relative;border:1px solid var(--line2);background:var(--panel);border-radius:9px;padding:11px;min-height:84px}.step-no{font:9px var(--mono);color:var(--dim)}.step-title{font-size:11px;font-weight:800;margin-top:6px}.step-status{font:9px var(--mono);margin-top:5px;color:var(--muted)}.step.done{border-color:#225443;background:linear-gradient(180deg,#11241d,var(--panel))}.step.active{border-color:#694b21;background:linear-gradient(180deg,#291f12,var(--panel));box-shadow:inset 0 2px var(--orange)}
+.validation-card{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.score-box{display:grid;place-items:center;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:16px}.score-ring{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--green) 0 88%,var(--panel3) 88% 100%);position:relative}.score-ring:after{content:'';position:absolute;inset:10px;background:var(--bg2);border-radius:50%}.score-ring span{position:relative;z-index:1;font:800 25px var(--display)}.check-list{display:flex;flex-direction:column;gap:8px}.check-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line2);padding-bottom:7px}.check-row:last-child{border-bottom:none}.check-name{font-size:11px;color:var(--muted)}
+.toast{position:fixed;right:22px;bottom:22px;background:#17211d;border:1px solid #295b47;color:var(--green);padding:11px 14px;border-radius:9px;box-shadow:0 15px 40px rgba(0,0,0,.35);z-index:100;font-size:11.5px;display:none}.toast.show{display:block;animation:fade .2s ease}@keyframes fade{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.mobile-overlay{display:none}
+@media(max-width:1300px){.grid-kpi{grid-template-columns:repeat(3,1fr)}.form-grid{grid-template-columns:repeat(2,1fr)}.field.span-4{grid-column:1/-1}.readonly-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:980px){.sidebar{transform:translateX(-100%);transition:.2s}.sidebar.open{transform:none}.main-shell{margin-left:0}.menu-btn{display:inline-block}.mobile-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}.layout-2,.layout-3,.validation-card{grid-template-columns:1fr}.flow-steps{grid-template-columns:1fr 1fr}.topbar{padding:0 14px}.content{padding:18px 14px 50px}}
+@media(max-width:640px){.grid-kpi{grid-template-columns:1fr 1fr}.form-grid,.readonly-grid{grid-template-columns:1fr}.field.span-2{grid-column:span 1}.flow-steps{grid-template-columns:1fr}.clock{display:none}.page-head{flex-direction:column}.content{padding:16px 10px 40px}.grid-kpi{gap:8px}.kpi{min-height:100px}.user-name{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-row">
+        <div class="logo">FC</div>
+        <div><div class="brand-title">Fuel Custody Live</div><div class="brand-sub">Blending · Transport · Receiving</div></div>
       </div>
+      <div class="site-chip"><span><span class="live-dot"></span>System status</span><b class="mono" style="font-size:10px;color:var(--green)">LIVE</b></div>
     </div>
-    <div class="kpi-grid">
-      ${kpis.map(k=>`<div class="kpi-card"><div class="kpi-label">${esc(k.label)}</div><div class="kpi-value">${k.value}</div><div class="kpi-sub">${esc(k.sub)}</div><div class="kpi-accent" style="background:${k.color}"></div></div>`).join('')}
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <label>Simulasi role</label>
+      <select id="roleSelect" class="role-select"></select>
+      <div class="role-scope" id="roleScope"></div>
     </div>
-    <div class="dash-grid">
-      <div class="panel">
-        <div class="panel-head"><div class="panel-title">Aktivitas Terbaru</div></div>
-        <div class="panel-body">
-          ${acts.slice(0,8).map(a=>`<div class="activity-row"><div class="activity-dot" style="background:${dotColor(a.status)}"></div><div><div class="activity-text">${a.text}</div><div class="activity-time">${fmtDate(a.dt)}</div></div></div>`).join('') || '<div class="empty-note">Belum ada aktivitas.</div>'}
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><div class="panel-title">Perlu Tindak Lanjut</div></div>
-        <div class="panel-body">
-          ${followups.slice(0,8).map(f=>`<div class="followup-row"><div class="ff-title">${esc(f.title)}</div><div class="ff-meta">${esc(f.meta)}</div></div>`).join('') || '<div class="empty-note">Tidak ada item terbuka. Semua beres.</div>'}
-        </div>
-      </div>
-    </div>
-    <div class="note-foot">
-      <span>Lingkup data: <b>${esc(ROLE_CONFIG[state.role].label)}</b> · ${esc({own:'hanya data sendiri',department:'satu departemen',business_unit:'satu business unit',cross_validation:'cross-divisi (pasangan transaksi)',all:'seluruh organisasi'}[currentRole().scope])}</span>
-      <span>Data demo tersimpan sementara di sesi ini — reload halaman akan mengembalikan ke data awal.</span>
-    </div>
-  `;
+  </aside>
+  <div class="mobile-overlay" id="overlay"></div>
+  <main class="main-shell">
+    <header class="topbar">
+      <div style="display:flex;align-items:center"><button class="menu-btn" id="menuBtn">☰</button><div class="crumb">PTSI / <b id="crumb">Live Dashboard</b></div></div>
+      <div class="top-right"><div class="clock" id="clock"></div><div class="user-chip"><div class="avatar" id="avatar">FO</div><div><div class="user-name" id="userName">Fuel Field Operator</div><div class="user-role" id="userRole">Fuel Blending</div></div></div></div>
+    </header>
+    <div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+    <section class="content" id="content"></section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const TOLERANCE_RATE = 0.0001; // 0.01%
+const ROLE_CONFIG = {
+  fuel_field:{label:'Fuel Field Operator',site:'Fuel Blending',scope:'Operasi unit Fuel Blending',modules:['dashboard','pre_inspection','loading','after_inspection','shipment_monitor']},
+  fuel_spv:{label:'Fuel SPV Operator',site:'Fuel Blending',scope:'Discharge, barge loading, monitoring dan approval operasional',modules:['dashboard','shipment_monitor','discharge','marine_loading','validation']},
+  rf_operator:{label:'RF Operator',site:'Riau Fiber',scope:'Hanya shipment tujuan Riau Fiber dan data receiving site sendiri',modules:['dashboard','receiving','site_history']},
+  mill_operator:{label:'Mill Operator',site:'Mill',scope:'Hanya shipment tujuan Mill dan data receiving site sendiri',modules:['dashboard','receiving','site_history']},
+  maintank_operator:{label:'Maintank Operator',site:'Maintank',scope:'Hanya shipment tujuan Maintank dan data receiving site sendiri',modules:['dashboard','receiving','site_history']},
+  it_admin:{label:'IT Administrator',site:'Enterprise',scope:'Akses seluruh site, master data, audit dan role management',modules:['dashboard','pre_inspection','loading','after_inspection','shipment_monitor','receiving','site_history','discharge','marine_loading','validation','admin']}
+};
+const NAV = [
+  {label:'Overview',items:[['dashboard','▦','Live Dashboard']]},
+  {label:'Fuel Blending',items:[['pre_inspection','✓','Before Loading Inspection'],['loading','⇆','Loading Operation'],['after_inspection','◆','After Loading Inspection'],['shipment_monitor','↗','Shipment Monitor']]},
+  {label:'Customer Receiving',items:[['receiving','⌁','Receiving Validation'],['site_history','≡','Receiving History'],['validation','◉','Custody Validation']]},
+  {label:'Marine & Cargo',items:[['discharge','⚓','Discharge Cargo'],['marine_loading','▱','Loading to Barge']]},
+  {label:'System',items:[['admin','⚙','Access & Governance']]}
+];
+const DEST = {RF:'Riau Fiber',MILL:'Mill',MAINTANK:'Maintank'};
+const DEST_ROLE = {rf_operator:'RF',mill_operator:'MILL',maintank_operator:'MAINTANK'};
+const state = {
+  role:'it_admin', page:'dashboard',
+  inspections:[
+    {id:'PRE-260718-01',unitCode:'FT-021',plate:'BM 8121 AA',driver:'Ari Pratama',transporter:'PT Sinar Logistik',destination:'RF',tank:'Good',valve:'Good',manhole:'Good',emptySeal:'Open / verified',damage:'Tidak ada',result:'PASS',time:'2026-07-18 07:42'},
+    {id:'PRE-260718-02',unitCode:'FT-034',plate:'BM 9034 QK',driver:'Rian Saputra',transporter:'PT Trans Energi',destination:'MILL',tank:'Good',valve:'Good',manhole:'Good',emptySeal:'Open / verified',damage:'Tidak ada',result:'PASS',time:'2026-07-18 08:10'}
+  ],
+  shipments:[
+    {id:'SHP-260718-001',preId:'PRE-260718-01',dest:'RF',unitCode:'FT-021',plate:'BM 8121 AA',driver:'Ari Pratama',transporter:'PT Sinar Logistik',request:32000,flowStart:418240,flowEnd:450210,total:31970,soundingBefore:12.420,soundingAfter:44.390,seals:['SL88021','SL88022','SL88023','SL88024'],status:'IN_TRANSIT',dispatchAt:'2026-07-18 09:15',eta:'2026-07-18 13:30',afterCondition:'Good',validation:null},
+    {id:'SHP-260718-002',preId:'PRE-260718-02',dest:'MILL',unitCode:'FT-034',plate:'BM 9034 QK',driver:'Rian Saputra',transporter:'PT Trans Energi',request:24000,flowStart:450210,flowEnd:474205,total:23995,soundingBefore:8.340,soundingAfter:32.335,seals:['SL88031','SL88032','SL88033','SL88034'],status:'IN_TRANSIT',dispatchAt:'2026-07-18 10:02',eta:'2026-07-18 14:10',afterCondition:'Good',validation:null},
+    {id:'SHP-260717-009',preId:'PRE-260717-09',dest:'MAINTANK',unitCode:'FT-017',plate:'BM 7710 LC',driver:'Dedi Kurniawan',transporter:'PT Sinar Logistik',request:16000,flowStart:389050,flowEnd:405048,total:15998,soundingBefore:5.200,soundingAfter:21.198,seals:['SL87971','SL87972','SL87973','SL87974'],status:'RECEIVED',dispatchAt:'2026-07-17 15:20',eta:'2026-07-17 18:10',afterCondition:'Good',validation:{received:15997,diff:-1,pct:0.00625,tolerance:1.5998,volumePass:true,sealPass:true,identityPass:true,risk:'LOW',time:'2026-07-17 18:22'}},
+    {id:'SHP-260717-008',preId:'PRE-260717-08',dest:'RF',unitCode:'FT-008',plate:'BM 6628 TR',driver:'Bagus Ramadhan',transporter:'PT Multi Angkut',request:32000,flowStart:357030,flowEnd:389050,total:32020,soundingBefore:10.100,soundingAfter:42.120,seals:['SL87961','SL87962','SL87963','SL87964'],status:'HOLD',dispatchAt:'2026-07-17 12:45',eta:'2026-07-17 16:30',afterCondition:'Good',validation:{received:31972,diff:-48,pct:0.1499,tolerance:3.202,volumePass:false,sealPass:false,identityPass:true,risk:'CRITICAL',time:'2026-07-17 16:51',notes:'Seal 3 tidak sesuai dan kehilangan volume melewati toleransi.'}},
+    {id:'SHP-260718-003',preId:'PRE-260718-03',dest:'MAINTANK',unitCode:'FT-041',plate:'BM 9145 RX',driver:'Yusuf Maulana',transporter:'PT Trans Energi',request:16000,flowStart:474205,flowEnd:490201,total:15996,soundingBefore:6.105,soundingAfter:22.101,seals:[],status:'AWAITING_AFTER',dispatchAt:null,eta:null,afterCondition:null,validation:null}
+  ],
+  discharge:[
+    {id:'DC-260718-01',type:'Vessel → Shore Tank',vessel:'MT Nusantara 8',product:'HSD',obs:4485.650,at15:4459.820,mt:3740.55,lt:3681.47,status:'COMPLETED',time:'2026-07-18 05:45'},
+    {id:'DC-260718-02',type:'Shore Tank → Barge',vessel:'BG Ocean 12',product:'Biosolar B40',obs:1820.400,at15:1809.730,mt:1511.80,lt:1487.91,status:'IN_PROGRESS',time:'2026-07-18 11:15'}
+  ],
+  audit:[]
+};
+const $ = s => document.querySelector(s);
+const fmt = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:3}).format(Number(n||0));
+const nowText = () => new Date().toLocaleString('id-ID',{hour12:false});
+function role(){return ROLE_CONFIG[state.role]}
+function siteScope(){return DEST_ROLE[state.role] || null}
+function allowedShipments(){const s=siteScope(); return s?state.shipments.filter(x=>x.dest===s):state.shipments}
+function badge(status){
+  const m={IN_TRANSIT:['info','IN TRANSIT'],RECEIVED:['good','RECEIVED'],HOLD:['bad','HOLD / INVESTIGATE'],AWAITING_AFTER:['warn','WAIT AFTER INSPECTION'],PASS:['good','PASS'],COMPLETED:['good','COMPLETED'],IN_PROGRESS:['warn','IN PROGRESS']};
+  const x=m[status]||['neutral',status]; return `<span class="badge ${x[0]}">${x[1]}</span>`;
 }
-
-/* ---------------- Inspection Pre-Loading ---------------- */
-function renderInspectionPre(){
-  const f = state.filters.inspection_pre || (state.filters.inspection_pre={});
-  let rows = filterByScope(DB.inspectionPre);
-  rows = applyDateFilter(rows, f, 'dt');
-  if(f.result) rows = rows.filter(r=>r.result===f.result);
-  rows = applySearch(rows, f, [r=>unitById(r.unit).plate, r=>r.seal]);
-  rows.sort((a,b)=>new Date(b.dt)-new Date(a.dt));
-
-  const canCreate = currentRole().canCreate;
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">Inspeksi Unit — Sebelum Loading</div><div class="page-desc">Pemeriksaan kondisi unit dan seal awal sebelum proses loading dimulai.</div></div>
-      <div class="page-actions">
-        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
-        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Inspeksi Baru</button>`:''}
-      </div>
-    </div>
-    <div id="filterSlot"></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>ID</th><th>Tanggal</th><th>Unit</th><th>Pemilik</th><th>Hasil</th><th class="wrap">Catatan</th><th>Seal Awal</th><th>Departemen</th></tr></thead>
-      <tbody>
-        ${rows.length ? rows.map(r=>{
-          const u = unitById(r.unit);
-          return `<tr>
-            <td class="mono">${r.id}</td>
-            <td>${fmtDate(r.dt)}</td>
-            <td>${esc(u.plate)}<div class="cell-sub">${esc(u.type)}</div></td>
-            <td>${esc(u.owner)}</td>
-            <td>${resultBadge(r.result)}</td>
-            <td class="wrap">${esc(r.reason)||'<span class="cell-sub">—</span>'}</td>
-            <td class="mono">${esc(r.seal)}</td>
-            <td>${esc(deptById(r.dept).name)}</td>
-          </tr>`;
-        }).join('') : `<tr class="empty-row"><td colspan="8">Tidak ada data yang cocok dengan filter.</td></tr>`}
-      </tbody>
-    </table></div>
-  `;
-  document.getElementById('filterSlot').innerHTML = filterBar('inspection_pre', [
-    {key:'q', type:'search', label:'Cari', placeholder:'Plat unit / no. seal'},
-    {key:'from', type:'date', label:'Dari Tanggal'},
-    {key:'to', type:'date', label:'Sampai Tanggal'},
-    {key:'result', type:'select', label:'Hasil', options:['Good','Reject']},
-  ], renderInspectionPre);
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    downloadCSV('inspeksi-pre-loading.csv', rows, [
-      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dt},{label:'Unit', get:r=>unitById(r.unit).plate},
-      {label:'Hasil', get:r=>r.result},{label:'Catatan', get:r=>r.reason},{label:'Seal', get:r=>r.seal},
-    ]);
-  });
-  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formInspectionPre);
+function audit(action,detail){state.audit.unshift({time:nowText(),role:role().label,action,detail});}
+function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
+function setupRoles(){
+  $('#roleSelect').innerHTML=Object.entries(ROLE_CONFIG).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+  $('#roleSelect').value=state.role;
+  $('#roleSelect').onchange=e=>{state.role=e.target.value;state.page='dashboard';renderAll();};
 }
-function formInspectionPre(){
-  const opts = UNITS.map(u=>`<option value="${u.id}">${esc(u.plate)} — ${esc(u.type)}</option>`).join('');
-  openModal('Inspeksi Pre-Loading Baru', `
-    <div class="form-grid">
-      <div class="form-field"><label>Unit</label><select name="unit" required>${opts}</select></div>
-      <div class="form-field"><label>Tanggal &amp; Waktu</label><input type="datetime-local" name="dt" required value="2026-07-17T09:00"></div>
-      <div class="form-field"><label>Hasil Inspeksi</label><select name="result" required><option value="Good">Good</option><option value="Reject">Reject</option></select></div>
-      <div class="form-field"><label>No. Seal Awal</label><input type="text" name="seal" placeholder="SL-P1xxxx" required></div>
-      <div class="form-field full"><label>Catatan / Alasan Reject</label><textarea name="reason" rows="2" placeholder="Isi jika hasil Reject"></textarea></div>
-    </div>
-  `, data=>{
-    const id = 'IP-'+String(state.idSeq.ip++).padStart(3,'0');
-    DB.inspectionPre.push({id, dt:data.dt, unit:data.unit, result:data.result, reason:data.reason||'', seal:data.seal, inspector:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
-    toast('Inspeksi pre-loading '+id+' tersimpan.');
-    renderInspectionPre();
-  });
+function renderNav(){
+  const allowed=role().modules;
+  $('#nav').innerHTML=NAV.map(g=>{
+    const items=g.items.filter(i=>allowed.includes(i[0])); if(!items.length)return '';
+    return `<div class="nav-label">${g.label}</div>${items.map(i=>`<a href="#" class="nav-item ${state.page===i[0]?'active':''}" data-page="${i[0]}"><span class="nav-icon">${i[1]}</span><span>${i[2]}</span>${i[0]==='receiving'?`<span class="nav-badge">${allowedShipments().filter(x=>x.status==='IN_TRANSIT').length}</span>`:''}</a>`).join('')}`;
+  }).join('');
+  document.querySelectorAll('.nav-item').forEach(a=>a.onclick=e=>{e.preventDefault();state.page=a.dataset.page;renderAll();closeMenu();});
 }
-
-/* ---------------- Inspection After-Loading ---------------- */
-function renderInspectionAfter(){
-  const f = state.filters.inspection_after || (state.filters.inspection_after={});
-  let rows = filterByScope(DB.inspectionAfter);
-  rows = applyDateFilter(rows, f, 'dt');
-  if(f.result) rows = rows.filter(r=>r.result===f.result);
-  rows = applySearch(rows, f, [r=>r.loadingId, r=>r.seal]);
-  rows.sort((a,b)=>new Date(b.dt)-new Date(a.dt));
-  const canCreate = currentRole().canCreate;
-
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">Inspeksi Unit — Setelah Loading</div><div class="page-desc">Verifikasi kondisi unit dan seal setelah proses loading selesai, sebelum unit berangkat.</div></div>
-      <div class="page-actions">
-        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
-        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Inspeksi Baru</button>`:''}
-      </div>
-    </div>
-    <div id="filterSlot"></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>ID</th><th>Tanggal</th><th>Ref. Loading</th><th>Unit</th><th>Hasil</th><th class="wrap">Catatan</th><th>Seal Akhir</th></tr></thead>
-      <tbody>
-        ${rows.length? rows.map(r=>{
-          const ld = DB_LD(r.loadingId);
-          return `<tr>
-            <td class="mono">${r.id}</td><td>${fmtDate(r.dt)}</td>
-            <td class="mono">${r.loadingId}</td>
-            <td>${ld? esc(unitById(ld.unit).plate) : '—'}</td>
-            <td>${resultBadge(r.result)}</td>
-            <td class="wrap">${esc(r.remarks)||'<span class="cell-sub">—</span>'}</td>
-            <td class="mono">${esc(r.seal)}</td>
-          </tr>`;
-        }).join('') : `<tr class="empty-row"><td colspan="7">Tidak ada data yang cocok dengan filter.</td></tr>`}
-      </tbody>
-    </table></div>
-  `;
-  document.getElementById('filterSlot').innerHTML = filterBar('inspection_after', [
-    {key:'q', type:'search', label:'Cari', placeholder:'Ref. loading / seal'},
-    {key:'from', type:'date', label:'Dari Tanggal'},
-    {key:'to', type:'date', label:'Sampai Tanggal'},
-    {key:'result', type:'select', label:'Hasil', options:['Good','Reject']},
-  ], renderInspectionAfter);
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    downloadCSV('inspeksi-after-loading.csv', rows, [
-      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dt},{label:'Ref Loading', get:r=>r.loadingId},
-      {label:'Hasil', get:r=>r.result},{label:'Catatan', get:r=>r.remarks},{label:'Seal', get:r=>r.seal},
-    ]);
-  });
-  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formInspectionAfter);
+function renderIdentity(){
+  $('#roleScope').innerHTML=`<b style="color:var(--muted)">${role().site}</b><br>${role().scope}`;
+  $('#userName').textContent=role().label; $('#userRole').textContent=role().site; $('#avatar').textContent=role().label.split(' ').map(x=>x[0]).slice(0,2).join('');
 }
-function formInspectionAfter(){
-  const opts = DB.loading.map(l=>`<option value="${l.id}">${l.id} — ${esc(unitById(l.unit).plate)}</option>`).join('');
-  openModal('Inspeksi After-Loading Baru', `
-    <div class="form-grid">
-      <div class="form-field full"><label>Ref. Loading</label><select name="loadingId" required>${opts}</select></div>
-      <div class="form-field"><label>Tanggal &amp; Waktu</label><input type="datetime-local" name="dt" required value="2026-07-17T09:30"></div>
-      <div class="form-field"><label>Hasil</label><select name="result" required><option value="Good">Good</option><option value="Reject">Reject</option></select></div>
-      <div class="form-field"><label>No. Seal Akhir</label><input type="text" name="seal" required placeholder="SL-4xxxx"></div>
-      <div class="form-field full"><label>Catatan</label><textarea name="remarks" rows="2"></textarea></div>
-    </div>
-  `, data=>{
-    const id = 'IA-'+String(state.idSeq.ia++).padStart(3,'0');
-    DB.inspectionAfter.push({id, loadingId:data.loadingId, dt:data.dt, result:data.result, seal:data.seal, remarks:data.remarks||'', inspector:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
-    toast('Inspeksi after-loading '+id+' tersimpan.');
-    renderInspectionAfter();
-  });
+function renderTicker(){
+  const items=state.shipments.slice(0,5).map(s=>`<span class="ticker-item"><span>${s.id}</span><b>${DEST[s.dest]}</b><span>${fmt(s.total)} L</span><span class="${s.status==='HOLD'?'text-bad':s.status==='RECEIVED'?'text-good':'text-blue'}">${s.status.replaceAll('_',' ')}</span></span>`);
+  $('#tickerTrack').innerHTML=[...items,...items].join('');
 }
-
-/* ---------------- Loading ---------------- */
-function renderLoading(){
-  const f = state.filters.loading || (state.filters.loading={});
-  let rows = filterByScope(DB.loading);
-  rows = applyDateFilter(rows, f, 'dtStart');
-  if(f.status) rows = rows.filter(r=>r.status===f.status);
-  rows = applySearch(rows, f, [r=>unitById(r.unit).plate, r=>r.seal]);
-  rows.sort((a,b)=>new Date(b.dtStart)-new Date(a.dtStart));
-  const canCreate = currentRole().canCreate;
-
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">Loading — Tangki Darat ke Unit</div><div class="page-desc">Pencatatan sounding, flowmeter, dan seal saat pengisian unit dari tangki terminal.</div></div>
-      <div class="page-actions">
-        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
-        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Loading Baru</button>`:''}
-      </div>
-    </div>
-    <div id="filterSlot"></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>ID</th><th>Tanggal</th><th>Unit</th><th>Tangki Sumber</th><th>Sounding</th><th>Vol. Sounding</th><th>Vol. Flowmeter</th><th>Seal</th><th>Tujuan</th><th>Status</th></tr></thead>
-      <tbody>
-        ${rows.length? rows.map(r=>{
-          const tank = tankById(r.tank);
-          return `<tr>
-            <td class="mono">${r.id}</td><td>${fmtDate(r.dtStart)}</td>
-            <td>${esc(unitById(r.unit).plate)}</td>
-            <td>${esc(tank.name)}<div class="cell-sub">${esc(productById(tank.product).name)}</div></td>
-            <td>${soundStrip(r.sBefore, r.sAfter)}</td>
-            <td class="mono">${fmtNum(r.volSound)} KL</td>
-            <td class="mono">${fmtNum(r.volFlow)} KL</td>
-            <td class="mono">${esc(r.seal)}</td>
-            <td>${esc(r.dest)}</td>
-            <td>${statusBadge(r.status)}</td>
-          </tr>`;
-        }).join('') : `<tr class="empty-row"><td colspan="10">Tidak ada data yang cocok dengan filter.</td></tr>`}
-      </tbody>
-    </table></div>
-  `;
-  document.getElementById('filterSlot').innerHTML = filterBar('loading', [
-    {key:'q', type:'search', label:'Cari', placeholder:'Plat unit / no. seal'},
-    {key:'from', type:'date', label:'Dari Tanggal'},
-    {key:'to', type:'date', label:'Sampai Tanggal'},
-    {key:'status', type:'select', label:'Status', options:['Draft','Completed']},
-  ], renderLoading);
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    downloadCSV('loading.csv', rows, [
-      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dtStart},{label:'Unit', get:r=>unitById(r.unit).plate},
-      {label:'Tangki', get:r=>tankById(r.tank).name},{label:'Vol Sounding', get:r=>r.volSound},{label:'Vol Flowmeter', get:r=>r.volFlow},
-      {label:'Seal', get:r=>r.seal},{label:'Status', get:r=>r.status},
-    ]);
-  });
-  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formLoading);
+function pageTitle(title,desc,actions=''){return `<div class="page-head"><div><div class="page-title">${title}</div><div class="page-desc">${desc}</div></div><div class="head-actions">${actions}</div></div>`}
+function dashboard(){
+  const ships=allowedShipments(); const today=ships.filter(s=>s.id.includes('260718')); const transit=ships.filter(s=>s.status==='IN_TRANSIT').length; const holds=ships.filter(s=>s.status==='HOLD').length; const received=ships.filter(s=>s.status==='RECEIVED');
+  const volume=today.reduce((a,b)=>a+(b.total||0),0); const pass=received.filter(s=>s.validation?.volumePass&&s.validation?.sealPass).length;
+  const avgLoss=received.length?received.reduce((a,b)=>a+Math.abs(b.validation?.pct||0),0)/received.length:0;
+  const siteLabel=siteScope()?DEST[siteScope()]:'All Network';
+  return `${pageTitle('Live Operations Dashboard',`Pemantauan custody chain secara real-time untuk ${siteLabel}. Status unit, volume, seal, receiving dan indikasi anomali ditampilkan dalam satu layar.`,'<button class="btn" onclick="renderAll()">Refresh Live Data</button>')}
+  <div class="grid-kpi">
+    ${kpi('Volume dispatch hari ini',fmt(volume)+' L','Akumulasi flowmeter final','78')}
+    ${kpi('Unit in transit',transit,'Sedang menuju receiving site',transit?'64':'15')}
+    ${kpi('Receiving verified',pass,'Volume + seal + identity sesuai','88')}
+    ${kpi('Exception / hold',holds,'Butuh investigasi custody',holds?'72':'8',holds?'text-bad':'')}
+    ${kpi('Avg. variance',fmt(avgLoss)+'%','Batas toleransi: 0,01%','42',avgLoss>.01?'text-bad':'text-good')}
+    ${kpi('Data integrity','99.94%','Sinkronisasi custody packet','96','text-good')}
+  </div>
+  <div class="layout-2">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Volume Movement — 24 Hours</div><div class="panel-sub">Dispatch vs actual receiving</div></div><div class="legend"><span class="lg-orange">Dispatch</span><span class="lg-cyan">Receiving</span></div></div><div class="panel-body"><div class="chart-wrap"><div class="chart-grid"></div><svg class="chart-svg" viewBox="0 0 800 240" preserveAspectRatio="none"><defs><linearGradient id="area1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f0a43a" stop-opacity=".22"/><stop offset="1" stop-color="#f0a43a" stop-opacity="0"/></linearGradient></defs><path d="M0 195 C60 185,75 165,120 172 S190 120,235 132 S305 88,355 105 S425 55,475 76 S550 43,610 60 S720 28,800 42 L800 220 L0 220 Z" fill="url(#area1)"/><path d="M0 195 C60 185,75 165,120 172 S190 120,235 132 S305 88,355 105 S425 55,475 76 S550 43,610 60 S720 28,800 42" fill="none" stroke="#f0a43a" stroke-width="3"/><path d="M0 206 C72 202,85 180,130 184 S200 141,250 150 S320 109,370 117 S440 78,493 91 S565 68,630 74 S730 55,800 63" fill="none" stroke="#50d5c7" stroke-width="2.5" stroke-dasharray="7 5"/></svg><div class="chart-labels"><span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span></div></div></div></div>
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Live Site Performance</div><div class="panel-sub">Custody validation by destination</div></div><span class="badge good">NETWORK ONLINE</span></div><div class="panel-body"><div class="market-list">
+      ${sitePerf('Riau Fiber','2 active','99.85%','-0.15%',false)}${sitePerf('Mill','1 active','99.98%','-0.02%',true)}${sitePerf('Maintank','1 pending','99.99%','-0.01%',true)}${sitePerf('Fuel Blending','3 process','100.00%','SOURCE',true)}
+    </div></div></div>
+  </div>
+  <div class="layout-2">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Active Custody Chain</div><div class="panel-sub">Status pengiriman yang sedang berjalan</div></div><button class="btn btn-sm" onclick="goPage('shipment_monitor')">Open monitor</button></div><div class="panel-body flush">${shipmentTable(ships.slice(0,6),true)}</div></div>
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Risk & Exception Feed</div><div class="panel-sub">Prioritas pemeriksaan berdasarkan mismatch</div></div></div><div class="panel-body">${riskFeed(ships)}</div></div>
+  </div>`;
 }
-function formLoading(){
-  const uOpts = UNITS.map(u=>`<option value="${u.id}">${esc(u.plate)}</option>`).join('');
-  const tOpts = TANKS.filter(t=>t.location==='Terminal Balikpapan').map(t=>`<option value="${t.id}" data-factor="0.42">${esc(t.name)} — ${esc(productById(t.product).name)}</option>`).join('');
-  openModal('Loading Baru', `
-    <div class="form-grid">
-      <div class="form-field"><label>Unit</label><select name="unit" required>${uOpts}</select></div>
-      <div class="form-field"><label>Tangki Sumber</label><select name="tank" id="ldTank" required>${tOpts}</select></div>
-      <div class="form-field"><label>Sounding Sebelum (mm)</label><input type="number" name="sBefore" id="ldBefore" required value="1500"></div>
-      <div class="form-field"><label>Sounding Sesudah (mm)</label><input type="number" name="sAfter" id="ldAfter" required value="1540"></div>
-      <div class="form-field"><label>Flowmeter Start (L)</label><input type="number" name="fmStart" required value="500000"></div>
-      <div class="form-field"><label>Flowmeter End (L)</label><input type="number" name="fmEnd" id="ldFmEnd" required value="516000"></div>
-      <div class="form-field"><label>No. Seal</label><input type="text" name="seal" required placeholder="SL-4xxxx"></div>
-      <div class="form-field"><label>Tujuan</label><input type="text" name="dest" required value="Depot Samarinda"></div>
-      <div class="form-field"><label>Mulai</label><input type="datetime-local" name="dtStart" required value="2026-07-17T10:00"></div>
-      <div class="form-field"><label>Selesai</label><input type="datetime-local" name="dtEnd" required value="2026-07-17T10:35"></div>
-      <div class="form-field"><label>Status</label><select name="status" required><option value="Completed">Completed</option><option value="Draft">Draft</option></select></div>
-      <div class="form-field full"><div class="calc" id="ldCalc">Vol. sounding (estimasi): —</div></div>
-    </div>
-  `, data=>{
-    const factor = 0.42;
-    const volSound = +(( +data.sAfter - +data.sBefore) * factor).toFixed(2);
-    const volFlow = +(((+data.fmEnd) - (+data.fmStart))/1000).toFixed(2);
-    const id = 'LD-'+String(state.idSeq.ld++).padStart(3,'0');
-    DB.loading.push({id, unit:data.unit, tank:data.tank, dtStart:data.dtStart, dtEnd:data.dtEnd, dest:data.dest,
-      sBefore:+data.sBefore, sAfter:+data.sAfter, volSound, volFlow, fmStart:+data.fmStart, fmEnd:+data.fmEnd,
-      seal:data.seal, status:data.status, operator:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
-    toast('Loading '+id+' tersimpan.');
-    renderLoading();
-  });
-  setTimeout(()=>{
-    const calc = document.getElementById('ldCalc');
-    const update = ()=>{
-      const b = +document.getElementById('ldBefore').value, a = +document.getElementById('ldAfter').value;
-      calc.textContent = 'Vol. sounding (estimasi): ' + fmtNum((a-b)*0.42) + ' KL';
-    };
-    document.getElementById('ldBefore').addEventListener('input', update);
-    document.getElementById('ldAfter').addEventListener('input', update);
-    update();
-  },0);
+function kpi(label,value,sub,w,cls=''){return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${sub}</div><div class="mini-line"><span style="width:${w}%"></span></div></div>`}
+function sitePerf(name,meta,value,delta,good){return `<div class="market-row"><div><div class="market-name">${name}</div><div class="market-meta">${meta}</div></div><div class="market-value">${value}</div><div class="market-delta ${good?'text-good':'text-bad'}">${delta}</div></div>`}
+function riskFeed(ships){
+  const risky=ships.filter(s=>s.status==='HOLD' || s.validation&&!s.validation.volumePass);
+  if(!risky.length)return `<div class="alert"><div class="alert-title text-good">Tidak ada exception aktif</div><div class="alert-meta">Semua custody packet dalam scope role saat ini berada dalam kondisi normal.</div></div>`;
+  return risky.map(s=>`<div class="alert"><div class="alert-top"><div class="alert-title">${s.id} · ${s.unitCode}</div><span class="badge bad">${s.validation?.risk||'HIGH'}</span></div><div class="alert-meta">${DEST[s.dest]} · selisih ${fmt(s.validation?.diff||0)} L · seal ${s.validation?.sealPass?'match':'mismatch'}<br>${s.validation?.notes||'Perlu review data receiving.'}</div></div>`).join('');
 }
-
-/* ---------------- Receiving ---------------- */
-function renderReceiving(){
-  const f = state.filters.receiving || (state.filters.receiving={});
-  let rows = filterByScope(DB.receiving);
-  rows = applyDateFilter(rows, f, 'dt');
-  rows = applySearch(rows, f, [r=>r.loadingId, r=>r.seal]);
-  rows.sort((a,b)=>new Date(b.dt)-new Date(a.dt));
-  const canCreate = currentRole().canCreate;
-
-  document.getElementById('main').innerHTML = `
-    <div class="info-strip">${icon('scale',16)}<div>Data loading asal (tangki sumber, seal, volume kirim) otomatis ditampilkan sebagai referensi pencocokan — tanpa membuka akses penuh ke seluruh data divisi Terminal Ops.</div></div>
-    <div class="page-head">
-      <div><div class="page-title">Receiving</div><div class="page-desc">Data hasil penerimaan di site tujuan, dicocokkan otomatis dengan data loading terkait.</div></div>
-      <div class="page-actions">
-        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
-        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Receiving Baru</button>`:''}
-      </div>
-    </div>
-    <div id="filterSlot"></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>ID</th><th>Tanggal</th><th>Ref. Loading</th><th>Tangki Tujuan</th><th>Sounding</th><th>Vol. Diterima</th><th>Vol. Dikirim (ref)</th><th>Seal Diterima</th><th>Kecocokan Seal</th></tr></thead>
-      <tbody>
-        ${rows.length? rows.map(r=>{
-          const ld = DB_LD(r.loadingId);
-          return `<tr>
-            <td class="mono">${r.id}</td><td>${fmtDate(r.dt)}</td>
-            <td class="mono">${r.loadingId}</td>
-            <td>${esc(tankById(r.tank).name)}</td>
-            <td>${soundStrip(r.sBefore, r.sAfter)}</td>
-            <td class="mono">${fmtNum(r.volFlow)} KL</td>
-            <td class="mono">${ld? fmtNum(ld.volFlow)+' KL' : '—'}</td>
-            <td class="mono">${esc(r.seal)}</td>
-            <td>${sealChip(ld ? r.seal===ld.seal : false)}</td>
-          </tr>`;
-        }).join('') : `<tr class="empty-row"><td colspan="9">Tidak ada data yang cocok dengan filter.</td></tr>`}
-      </tbody>
-    </table></div>
-  `;
-  document.getElementById('filterSlot').innerHTML = filterBar('receiving', [
-    {key:'q', type:'search', label:'Cari', placeholder:'Ref. loading / seal'},
-    {key:'from', type:'date', label:'Dari Tanggal'},
-    {key:'to', type:'date', label:'Sampai Tanggal'},
-  ], renderReceiving);
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    downloadCSV('receiving.csv', rows, [
-      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dt},{label:'Ref Loading', get:r=>r.loadingId},
-      {label:'Vol Diterima', get:r=>r.volFlow},{label:'Seal', get:r=>r.seal},
-    ]);
-  });
-  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formReceiving);
+function shipmentTable(ships,compact=false){
+  if(!ships.length)return `<div style="padding:25px;color:var(--dim);text-align:center">Tidak ada shipment dalam scope akses ini.</div>`;
+  return `<div class="${compact?'':'table-wrap'}"><table><thead><tr><th>Shipment</th><th>Destination</th><th>Unit</th><th>Driver / Transporter</th><th>Dispatch Volume</th><th>Seal</th><th>Status</th><th>Variance</th></tr></thead><tbody>${ships.map(s=>`<tr><td><div class="cell-main mono">${s.id}</div><div class="cell-sub">${s.dispatchAt||'Belum dispatch'}</div></td><td>${DEST[s.dest]}</td><td><div class="cell-main">${s.unitCode}</div><div class="cell-sub">${s.plate}</div></td><td><div>${s.driver}</div><div class="cell-sub">${s.transporter}</div></td><td class="mono">${fmt(s.total)} L</td><td>${s.seals.length?`<span class="badge good">${s.seals.length} VERIFIED</span>`:'<span class="badge warn">PENDING</span>'}</td><td>${badge(s.status)}</td><td class="mono ${s.validation&&!s.validation.volumePass?'text-bad':'text-good'}">${s.validation?fmt(s.validation.diff)+' L':'—'}</td></tr>`).join('')}</tbody></table></div>`;
 }
-function formReceiving(){
-  const completed = DB.loading.filter(l=>l.status==='Completed' && !DB.receiving.some(r=>r.loadingId===l.id));
-  const opts = completed.map(l=>`<option value="${l.id}">${l.id} — ${esc(unitById(l.unit).plate)} — ${fmtNum(l.volFlow)} KL</option>`).join('') || '<option value="">Tidak ada loading yang menunggu receiving</option>';
-  const tOpts = TANKS.filter(t=>t.location==='Depot Samarinda').map(t=>`<option value="${t.id}">${esc(t.name)} — ${esc(productById(t.product).name)}</option>`).join('');
-  openModal('Receiving Baru', `
-    <div class="form-grid">
-      <div class="form-field full"><label>Ref. Loading</label><select name="loadingId" required>${opts}</select></div>
-      <div class="form-field"><label>Tangki Tujuan</label><select name="tank" required>${tOpts}</select></div>
-      <div class="form-field"><label>Tanggal &amp; Waktu</label><input type="datetime-local" name="dt" required value="2026-07-17T15:00"></div>
-      <div class="form-field"><label>Sounding Sebelum (mm)</label><input type="number" name="sBefore" required value="1000"></div>
-      <div class="form-field"><label>Sounding Sesudah (mm)</label><input type="number" name="sAfter" required value="1040"></div>
-      <div class="form-field"><label>Flowmeter Diterima (KL)</label><input type="number" step="0.01" name="volFlow" required></div>
-      <div class="form-field"><label>No. Seal Diterima</label><input type="text" name="seal" required placeholder="Cocokkan dengan seal loading"></div>
-    </div>
-  `, data=>{
-    if(!data.loadingId){ toast('Tidak ada loading yang bisa direceiving.'); return; }
-    const volSound = +((+data.sAfter - +data.sBefore) * 0.35).toFixed(2);
-    const id = 'RC-'+String(state.idSeq.rc++).padStart(3,'0');
-    DB.receiving.push({id, loadingId:data.loadingId, tank:data.tank, dt:data.dt, sBefore:+data.sBefore, sAfter:+data.sAfter,
-      volSound, volFlow:+data.volFlow, seal:data.seal, receiver:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
-    toast('Receiving '+id+' tersimpan — cek halaman Validasi Volume.');
-    renderReceiving();
-  });
+function flowSteps(active){const steps=[['01','Before Inspection'],['02','Loading'],['03','After Inspection'],['04','Transport'],['05','Receiving']];return `<div class="flow-steps">${steps.map((s,i)=>`<div class="step ${i<active?'done':i===active?'active':''}"><div class="step-no">PHASE ${s[0]}</div><div class="step-title">${s[1]}</div><div class="step-status">${i<active?'Completed':i===active?'Current phase':'Waiting'}</div></div>`).join('')}</div>`}
+function preInspection(){
+  return `${pageTitle('Before Loading Inspection','Pemeriksaan unit kosong sebelum diizinkan masuk ke proses pengisian. Unit yang gagal tidak dapat dibuatkan loading record.')}${flowSteps(0)}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">New Unit Inspection</div><div class="panel-sub">Identity, physical condition dan empty seal status</div></div></div><div class="panel-body"><form id="preForm"><div class="form-grid">
+    ${field('Unit code','unitCode','FT-052')}${field('Nomor plat','plate','BM 9521 ZX')}${field('Nama driver','driver','')}${field('Transporter','transporter','')}
+    <div class="field"><label>Destination</label><select name="destination" required>${Object.entries(DEST).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+    ${selectField('Kondisi tanki','tank',['Good','Minor defect','Reject'])}${selectField('Valve / outlet','valve',['Good','Minor defect','Leak / Reject'])}${selectField('Manhole / cover','manhole',['Good','Minor defect','Reject'])}
+    ${selectField('Status seal unit kosong','emptySeal',['Open / verified','Seal lama masih terpasang','Tidak dapat diverifikasi'])}<div class="field span-2"><label>Kerusakan / temuan</label><input name="damage" placeholder="Tidak ada atau jelaskan temuan"></div><div class="field"><label>Inspection result</label><select name="result"><option>PASS</option><option>REJECT</option></select></div>
+  </div><div class="form-actions"><button type="reset" class="btn">Reset</button><button class="btn btn-primary">Save Inspection</button></div></form></div></div>
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Inspection Queue</div><div class="panel-sub">Latest unit readiness</div></div></div><div class="panel-body">${state.inspections.slice(0,6).map(i=>`<div class="alert"><div class="alert-top"><div class="alert-title">${i.unitCode} · ${i.plate}</div>${badge(i.result)}</div><div class="alert-meta">${DEST[i.destination]} · ${i.driver} · ${i.transporter}<br>${i.time}</div></div>`).join('')}</div></div></div>`;
 }
-
-/* ---------------- Validation ---------------- */
-function renderValidation(){
-  const f = state.filters.validation || (state.filters.validation={});
-  let rows = computeValidation();
-  rows = rows.filter(v=>{
-    const user = currentUser(), role = currentRole();
-    if(role.scope==='all') return true;
-    if(role.scope==='business_unit') return v.load.bu===user.bu;
-    if(role.scope==='department') return v.load.dept===user.dept || (v.rc && v.rc.dept===user.dept);
-    return true;
-  });
-  if(f.status) rows = rows.filter(r=>r.status===f.status);
-  rows = applySearch(rows, f, [r=>r.loadingId, r=>r.receivingId]);
-  rows.sort((a,b)=>new Date(b.load.dtStart)-new Date(a.load.dtStart));
-  const canApprove = currentRole().canApprove;
-
-  document.getElementById('main').innerHTML = `
-    <div class="info-strip">${icon('scale',16)}<div>Perbandingan dihitung otomatis dari pasangan transaksi Loading ↔ Receiving. Toleransi selisih volume: <b>±0,5%</b>; seal harus cocok persis.</div></div>
-    <div class="page-head">
-      <div><div class="page-title">Validasi Volume Loading vs Receiving</div><div class="page-desc">Pencocokan seal, sounding, dan volume flowmeter lintas divisi.</div></div>
-      <div class="page-actions"><button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button></div>
-    </div>
-    <div id="filterSlot"></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>Loading</th><th>Receiving</th><th>Vol. Loading</th><th>Vol. Receiving</th><th>Selisih</th><th>Seal</th><th>Status</th><th>Validator</th>${canApprove?'<th>Aksi</th>':''}</tr></thead>
-      <tbody>
-        ${rows.length? rows.map(v=>`<tr>
-            <td class="mono">${v.loadingId}</td>
-            <td class="mono">${v.receivingId||'<span class="cell-sub">menunggu</span>'}</td>
-            <td class="mono">${fmtNum(v.volLoad)} KL</td>
-            <td class="mono">${v.volRecv!=null? fmtNum(v.volRecv)+' KL':'—'}</td>
-            <td class="mono" style="color:${v.variancePct==null?'inherit':(Math.abs(v.variancePct)>0.5?'var(--red)':'var(--green)')}">${v.variancePct!=null? (v.variancePct>0?'+':'')+fmtNum(v.variancePct,2)+'%':'—'}</td>
-            <td>${v.sealMatch==null? '<span class="cell-sub">—</span>' : sealChip(v.sealMatch)}</td>
-            <td>${statusBadge(v.status)}</td>
-            <td>${v.approval? esc(findUser(v.approval.by).name)+`<div class="cell-sub">${fmtDate(v.approval.at)}</div>` : '<span class="cell-sub">Belum divalidasi</span>'}</td>
-            ${canApprove? `<td>${v.status!=='Pending' && !v.approval ? `<button class="btn btn-sm" data-approve="${v.loadingId}">${icon('check',13)} Approve</button>` : ''}</td>`:''}
-          </tr>`).join('') : `<tr class="empty-row"><td colspan="9">Tidak ada data yang cocok dengan filter.</td></tr>`}
-      </tbody>
-    </table></div>
-  `;
-  document.getElementById('filterSlot').innerHTML = filterBar('validation', [
-    {key:'q', type:'search', label:'Cari', placeholder:'ID loading / receiving'},
-    {key:'status', type:'select', label:'Status', options:['Matched','Discrepancy','Pending']},
-  ], renderValidation);
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    downloadCSV('validasi-volume.csv', rows, [
-      {label:'Loading', get:r=>r.loadingId},{label:'Receiving', get:r=>r.receivingId},
-      {label:'Vol Loading', get:r=>r.volLoad},{label:'Vol Receiving', get:r=>r.volRecv},
-      {label:'Selisih %', get:r=>r.variancePct},{label:'Seal Cocok', get:r=>r.sealMatch},{label:'Status', get:r=>r.status},
-    ]);
-  });
-  if(canApprove){
-    document.querySelectorAll('[data-approve]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const lid = btn.getAttribute('data-approve');
-        DB.validationApprovals[lid] = {by:currentUser().email, at:'2026-07-17T'+String(9+Math.floor(Math.random()*3)).padStart(2,'0')+':15', remarks:''};
-        toast('Validasi '+lid+' disetujui.');
-        renderValidation();
-      });
-    });
-  }
+function field(label,name,placeholder='',type='text'){return `<div class="field"><label>${label}</label><input type="${type}" name="${name}" placeholder="${placeholder}" required></div>`}
+function selectField(label,name,options){return `<div class="field"><label>${label}</label><select name="${name}">${options.map(x=>`<option>${x}</option>`).join('')}</select></div>`}
+function loadingPage(){
+  const eligible=state.inspections.filter(i=>i.result==='PASS');
+  return `${pageTitle('Loading Operation','Input data pengisian berdasarkan unit yang sudah lolos before loading inspection. Total flowmeter dihitung otomatis dari final minus initial.')}${flowSteps(1)}
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Create Loading Record</div><div class="panel-sub">Flowmeter, sounding dan requested volume</div></div><span class="badge info">SOURCE: FUEL BLENDING</span></div><div class="panel-body"><form id="loadingForm"><div class="form-grid">
+    <div class="field span-2"><label>Approved inspection</label><select name="preId" required>${eligible.map(i=>`<option value="${i.id}">${i.id} · ${i.unitCode} · ${i.plate} → ${DEST[i.destination]}</option>`).join('')}</select></div>
+    ${field('Requested volume (L)','request','32000','number')}${field('Flowmeter initial','flowStart','500000','number')}${field('Flowmeter final','flowEnd','532000','number')}${field('Sounding before','soundingBefore','10.250','number')}${field('Sounding after','soundingAfter','42.250','number')}
+    <div class="field"><label>Calculated flow volume</label><input id="calcFlow" value="0 L" readonly></div>
+    <div class="field span-4"><label>Loading remarks</label><textarea name="remarks" placeholder="Catatan proses pengisian, abnormal condition, stop/start atau informasi penting lain."></textarea></div>
+  </div><div class="form-actions"><button type="reset" class="btn">Reset</button><button class="btn btn-primary">Complete Loading</button></div></form></div></div>`;
 }
-
-/* ---------------- Discharge Cargo ---------------- */
-function renderDischarge(){
-  const f = state.filters.discharge || (state.filters.discharge={});
-  let rows = filterByScope(DB.discharge);
-  rows = applyDateFilter(rows, f, 'dtStart');
-  if(f.status) rows = rows.filter(r=>r.status===f.status);
-  rows.sort((a,b)=>new Date(b.dtStart)-new Date(a.dtStart));
-  const canCreate = currentRole().canCreate;
-
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">Discharge Cargo — Vessel ke Tangki Darat</div><div class="page-desc">Pembongkaran muatan dari kapal ke tangki timbun terminal.</div></div>
-      <div class="page-actions">
-        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
-        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Discharge Baru</button>`:''}
-      </div>
-    </div>
-    <div id="filterSlot"></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>ID</th><th>Tanggal</th><th>Vessel</th><th>Tangki Tujuan</th><th>Vol. Vessel</th><th>Vol. Tangki</th><th>Selisih</th><th>Seal</th><th>Surveyor</th><th>Status</th></tr></thead>
-      <tbody>
-        ${rows.length? rows.map(r=>{
-          const diffPct = +(((r.volTank-r.volVessel)/r.volVessel)*100).toFixed(2);
-          return `<tr>
-            <td class="mono">${r.id}</td><td>${fmtDate(r.dtStart)}</td>
-            <td>${esc(vesselById(r.vessel).name)}</td>
-            <td>${esc(tankById(r.tank).name)}</td>
-            <td class="mono">${fmtNum(r.volVessel)} KL</td>
-            <td class="mono">${fmtNum(r.volTank)} KL</td>
-            <td class="mono" style="color:${Math.abs(diffPct)>0.5?'var(--red)':'var(--green)'}">${diffPct>0?'+':''}${fmtNum(diffPct,2)}%</td>
-            <td class="mono">${esc(r.seal)}</td>
-            <td>${esc(findUser(r.surveyor).name)}</td>
-            <td>${statusBadge(r.status)}</td>
-          </tr>`;
-        }).join('') : `<tr class="empty-row"><td colspan="10">Tidak ada data yang cocok dengan filter.</td></tr>`}
-      </tbody>
-    </table></div>
-  `;
-  document.getElementById('filterSlot').innerHTML = filterBar('discharge', [
-    {key:'from', type:'date', label:'Dari Tanggal'},
-    {key:'to', type:'date', label:'Sampai Tanggal'},
-    {key:'status', type:'select', label:'Status', options:['Completed','In Progress']},
-  ], renderDischarge);
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    downloadCSV('discharge-cargo.csv', rows, [
-      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dtStart},{label:'Vessel', get:r=>vesselById(r.vessel).name},
-      {label:'Tangki', get:r=>tankById(r.tank).name},{label:'Vol Vessel', get:r=>r.volVessel},{label:'Vol Tangki', get:r=>r.volTank},{label:'Status', get:r=>r.status},
-    ]);
-  });
-  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formDischarge);
+function afterInspection(){
+  const waiting=state.shipments.filter(s=>s.status==='AWAITING_AFTER');
+  return `${pageTitle('After Loading Inspection','Final check setelah pengisian. Nomor segel yang disahkan pada tahap ini menjadi referensi utama receiving site.')}${flowSteps(2)}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">Finalize Unit & Seal</div><div class="panel-sub">Shipment baru terkirim ke customer setelah tahap ini PASS</div></div></div><div class="panel-body">${waiting.length?`<form id="afterForm"><div class="form-grid"><div class="field span-2"><label>Shipment waiting inspection</label><select name="shipmentId">${waiting.map(s=>`<option value="${s.id}">${s.id} · ${s.unitCode} · ${DEST[s.dest]}</option>`).join('')}</select></div>${field('Seal 1','seal1','SL88101')}${field('Seal 2','seal2','SL88102')}${field('Seal 3','seal3','SL88103')}${field('Seal 4','seal4','SL88104')}${selectField('Final tank condition','condition',['Good','Minor damage','Reject'])}<div class="field span-2"><label>Final remarks</label><input name="remarks" placeholder="Seal terpasang dan tanki aman"></div></div><div class="form-actions"><button class="btn btn-primary">PASS & Dispatch Custody Packet</button></div></form>`:`<div style="padding:25px;text-align:center;color:var(--dim)">Tidak ada loading record yang menunggu after inspection.</div>`}</div></div>
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Dispatch Rule</div><div class="panel-sub">Data yang dikunci setelah PASS</div></div></div><div class="panel-body"><div class="check-list">${['Unit code & plate','Driver & transporter','Flowmeter initial / final / total','Sounding before / after','4 nomor seal final','Destination & dispatch time'].map(x=>`<div class="check-row"><span class="check-name">${x}</span><span class="badge good">LOCKED</span></div>`).join('')}</div></div></div></div>`;
 }
-function formDischarge(){
-  const vOpts = VESSELS.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
-  const tOpts = TANKS.filter(t=>t.location==='Terminal Balikpapan').map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
-  openModal('Discharge Cargo Baru', `
-    <div class="form-grid">
-      <div class="form-field"><label>Vessel</label><select name="vessel" required>${vOpts}</select></div>
-      <div class="form-field"><label>Tangki Tujuan</label><select name="tank" required>${tOpts}</select></div>
-      <div class="form-field"><label>Sounding Vessel Sebelum (mm)</label><input type="number" name="vBefore" required value="8000"></div>
-      <div class="form-field"><label>Sounding Vessel Sesudah (mm)</label><input type="number" name="vAfter" required value="3000"></div>
-      <div class="form-field"><label>Sounding Tangki Sebelum (mm)</label><input type="number" name="tBefore" required value="1200"></div>
-      <div class="form-field"><label>Sounding Tangki Sesudah (mm)</label><input type="number" name="tAfter" required value="2900"></div>
-      <div class="form-field"><label>Vol. Vessel (KL)</label><input type="number" step="0.01" name="volVessel" required></div>
-      <div class="form-field"><label>Vol. Tangki (KL)</label><input type="number" step="0.01" name="volTank" required></div>
-      <div class="form-field"><label>No. Seal</label><input type="text" name="seal" required placeholder="SD-2xxxx"></div>
-      <div class="form-field"><label>Status</label><select name="status" required><option value="Completed">Completed</option><option value="In Progress">In Progress</option></select></div>
-      <div class="form-field"><label>Mulai</label><input type="datetime-local" name="dtStart" required value="2026-07-17T06:00"></div>
-      <div class="form-field"><label>Selesai</label><input type="datetime-local" name="dtEnd" value="2026-07-17T14:00"></div>
-    </div>
-  `, data=>{
-    const id = 'DC-'+String(state.idSeq.dc++).padStart(3,'0');
-    DB.discharge.push({id, vessel:data.vessel, tank:data.tank, dtStart:data.dtStart, dtEnd:data.dtEnd||null,
-      vBefore:+data.vBefore, vAfter:+data.vAfter, tBefore:+data.tBefore, tAfter:+data.tAfter,
-      volVessel:+data.volVessel, volTank:+data.volTank, seal:data.seal, status:data.status,
-      surveyor:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
-    toast('Discharge '+id+' tersimpan.');
-    renderDischarge();
-  });
+function shipmentMonitor(){return `${pageTitle('Shipment Monitor','Monitoring unit dari Fuel Blending sampai receiving. IT Admin dan Fuel SPV melihat seluruh jaringan; customer tidak memiliki menu ini.')}${shipmentTable(state.shipments)}`}
+function receivingPage(){
+  const site=siteScope(); const source=site?state.shipments.filter(s=>s.dest===site&&s.status==='IN_TRANSIT'):state.shipments.filter(s=>s.status==='IN_TRANSIT');
+  const defaultShip=source[0];
+  return `${pageTitle('Receiving Validation',site?`Validasi shipment masuk untuk ${DEST[site]}. Data sumber hanya ditampilkan sebagai custody packet yang memang ditujukan ke site ini.`:'Admin receiving console untuk seluruh customer.')} ${flowSteps(4)}
+  ${source.length?`<div class="panel"><div class="panel-head"><div><div class="panel-title">Incoming Shipment</div><div class="panel-sub">Bandingkan physical check dengan locked dispatch packet</div></div><span class="badge warn">TOLERANCE 0.01%</span></div><div class="panel-body"><form id="receivingForm"><div class="field" style="margin-bottom:13px"><label>Select shipment</label><select name="shipmentId" id="receivingShipment">${source.map(s=>`<option value="${s.id}">${s.id} · ${s.unitCode} · ${DEST[s.dest]}</option>`).join('')}</select></div><div id="dispatchPacket">${dispatchPacket(defaultShip)}</div><div style="height:14px"></div><div class="form-grid">
+    ${field('Unit code actual','unitCode',defaultShip?.unitCode||'')}${field('Nomor plat actual','plate',defaultShip?.plate||'')}${field('Nama driver actual','driver',defaultShip?.driver||'')}${field('Transporter actual','transporter',defaultShip?.transporter||'')}
+    ${field('Seal 1 actual','seal1',defaultShip?.seals?.[0]||'')}${field('Seal 2 actual','seal2',defaultShip?.seals?.[1]||'')}${field('Seal 3 actual','seal3',defaultShip?.seals?.[2]||'')}${field('Seal 4 actual','seal4',defaultShip?.seals?.[3]||'')}
+    ${field('Actual receiving volume (L)','received','31970','number')}${field('Receiving sounding before','soundBefore','8.200','number')}${field('Receiving sounding after','soundAfter','40.150','number')}${selectField('Physical damage','damage',['Tidak ada','Ada kerusakan ringan','Ada kerusakan serius'])}
+    <div class="field span-4"><label>Receiving remarks</label><textarea name="notes" placeholder="Catatan kondisi unit, seal, kebocoran, discrepancy atau kejadian lain."></textarea></div>
+  </div><div class="form-actions"><button class="btn btn-primary">Validate & Close Receiving</button></div></form></div></div>`:`<div class="panel"><div class="panel-body" style="padding:40px;text-align:center;color:var(--dim)">Tidak ada shipment in-transit yang tersedia untuk role/site ini.</div></div>`}`;
 }
-
-/* ---------------- Ship Loading ---------------- */
-function renderShipLoading(){
-  const f = state.filters.ship_loading || (state.filters.ship_loading={});
-  let rows = filterByScope(DB.shipLoading);
-  rows = applyDateFilter(rows, f, 'dtStart');
-  if(f.status) rows = rows.filter(r=>r.status===f.status);
-  rows.sort((a,b)=>new Date(b.dtStart)-new Date(a.dtStart));
-  const canCreate = currentRole().canCreate;
-
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">Loading ke Kapal — Tangki Darat ke Vessel</div><div class="page-desc">Pemuatan produk dari tangki timbun terminal ke kapal.</div></div>
-      <div class="page-actions">
-        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
-        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Loading Kapal Baru</button>`:''}
-      </div>
-    </div>
-    <div id="filterSlot"></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>ID</th><th>Tanggal</th><th>Tangki Sumber</th><th>Vessel</th><th>Vol. Tangki</th><th>Vol. Vessel</th><th>Seal</th><th>Surveyor</th><th>Status</th></tr></thead>
-      <tbody>
-        ${rows.length? rows.map(r=>`<tr>
-            <td class="mono">${r.id}</td><td>${fmtDate(r.dtStart)}</td>
-            <td>${esc(tankById(r.tank).name)}</td>
-            <td>${esc(vesselById(r.vessel).name)}</td>
-            <td class="mono">${fmtNum(r.volTank)} KL</td>
-            <td class="mono">${r.volVessel!=null? fmtNum(r.volVessel)+' KL':'<span class="cell-sub">berlangsung</span>'}</td>
-            <td class="mono">${esc(r.seal)}</td>
-            <td>${esc(findUser(r.surveyor).name)}</td>
-            <td>${statusBadge(r.status)}</td>
-          </tr>`).join('') : `<tr class="empty-row"><td colspan="9">Tidak ada data yang cocok dengan filter.</td></tr>`}
-      </tbody>
-    </table></div>
-  `;
-  document.getElementById('filterSlot').innerHTML = filterBar('ship_loading', [
-    {key:'from', type:'date', label:'Dari Tanggal'},
-    {key:'to', type:'date', label:'Sampai Tanggal'},
-    {key:'status', type:'select', label:'Status', options:['Completed','In Progress']},
-  ], renderShipLoading);
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    downloadCSV('loading-kapal.csv', rows, [
-      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dtStart},{label:'Tangki', get:r=>tankById(r.tank).name},
-      {label:'Vessel', get:r=>vesselById(r.vessel).name},{label:'Vol Tangki', get:r=>r.volTank},{label:'Vol Vessel', get:r=>r.volVessel},{label:'Status', get:r=>r.status},
-    ]);
-  });
-  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formShipLoading);
+function dispatchPacket(s){if(!s)return '';return `<div class="readonly-card"><div class="readonly-grid"><div><div class="ro-label">Shipment</div><div class="ro-value mono">${s.id}</div></div><div><div class="ro-label">Destination</div><div class="ro-value">${DEST[s.dest]}</div></div><div><div class="ro-label">Dispatch volume</div><div class="ro-value mono">${fmt(s.total)} L</div></div><div><div class="ro-label">Tolerance 0.01%</div><div class="ro-value mono">± ${fmt(s.total*TOLERANCE_RATE)} L</div></div><div><div class="ro-label">Unit / Plate</div><div class="ro-value">${s.unitCode} · ${s.plate}</div></div><div><div class="ro-label">Driver</div><div class="ro-value">${s.driver}</div></div><div><div class="ro-label">Transporter</div><div class="ro-value">${s.transporter}</div></div><div><div class="ro-label">Locked seals</div><div class="ro-value mono">${s.seals.join(' · ')}</div></div></div></div>`}
+function siteHistory(){
+  const s=allowedShipments().filter(x=>['RECEIVED','HOLD'].includes(x.status));
+  return `${pageTitle('Receiving History','Riwayat receiving sesuai scope akses. Customer hanya melihat histori site sendiri.')}${shipmentTable(s)}`;
 }
-function formShipLoading(){
-  const tOpts = TANKS.filter(t=>t.location==='Terminal Balikpapan').map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
-  const vOpts = VESSELS.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
-  openModal('Loading ke Kapal Baru', `
-    <div class="form-grid">
-      <div class="form-field"><label>Tangki Sumber</label><select name="tank" required>${tOpts}</select></div>
-      <div class="form-field"><label>Vessel</label><select name="vessel" required>${vOpts}</select></div>
-      <div class="form-field"><label>Sounding Tangki Sebelum (mm)</label><input type="number" name="tBefore" required value="3900"></div>
-      <div class="form-field"><label>Sounding Tangki Sesudah (mm)</label><input type="number" name="tAfter" required value="1360"></div>
-      <div class="form-field"><label>Sounding Vessel Sebelum (mm)</label><input type="number" name="vBefore" required value="2280"></div>
-      <div class="form-field"><label>Sounding Vessel Sesudah (mm)</label><input type="number" name="vAfter" value="" placeholder="Isi setelah selesai"></div>
-      <div class="form-field"><label>Vol. Tangki (KL)</label><input type="number" step="0.01" name="volTank" required></div>
-      <div class="form-field"><label>Vol. Vessel (KL)</label><input type="number" step="0.01" name="volVessel" placeholder="Isi setelah selesai"></div>
-      <div class="form-field"><label>No. Seal</label><input type="text" name="seal" required placeholder="SG-3xxxx"></div>
-      <div class="form-field"><label>Status</label><select name="status" required><option value="In Progress">In Progress</option><option value="Completed">Completed</option></select></div>
-      <div class="form-field"><label>Mulai</label><input type="datetime-local" name="dtStart" required value="2026-07-17T07:00"></div>
-      <div class="form-field"><label>Selesai</label><input type="datetime-local" name="dtEnd"></div>
-    </div>
-  `, data=>{
-    const id = 'SH-'+String(state.idSeq.sh++).padStart(3,'0');
-    DB.shipLoading.push({id, tank:data.tank, vessel:data.vessel, dtStart:data.dtStart, dtEnd:data.dtEnd||null,
-      tBefore:+data.tBefore, tAfter:+data.tAfter, vBefore:+data.vBefore, vAfter:data.vAfter?+data.vAfter:null,
-      volTank:+data.volTank, volVessel:data.volVessel?+data.volVessel:null, seal:data.seal, status:data.status,
-      surveyor:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
-    toast('Loading kapal '+id+' tersimpan.');
-    renderShipLoading();
-  });
+function validationPage(){
+  const evaluated=state.shipments.filter(s=>s.validation);
+  return `${pageTitle('Custody Validation','Ringkasan kontrol volume, seal dan identitas unit. Exception diprioritaskan untuk investigasi.')}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">Network Integrity Score</div><div class="panel-sub">Composite custody validation</div></div></div><div class="panel-body"><div class="validation-card"><div class="score-box"><div class="score-ring"><span>88%</span></div><div style="font-size:10.5px;color:var(--muted);margin-top:10px">1 critical exception dari ${evaluated.length} validation</div></div><div class="check-list">${check('Identity match','100%',true)}${check('Seal integrity','50%',false)}${check('Volume within 0.01%','50%',false)}${check('Receiving completeness','100%',true)}</div></div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Investigation Priority</div><div class="panel-sub">Rule-based anomaly signals</div></div></div><div class="panel-body">${riskFeed(state.shipments)}</div></div></div>
+  ${shipmentTable(evaluated)}`;
 }
-
-/* ---------------- Master Data ---------------- */
-let masterTab = 'users';
-function renderMaster(){
-  const tabs = [
-    {key:'users', label:'Users & Role'},
-    {key:'units', label:'Units'},
-    {key:'vessels', label:'Vessels'},
-    {key:'tanks', label:'Tanks'},
-    {key:'permissions', label:'Role Permission'},
-  ];
-  let body = '';
-  if(masterTab==='users'){
-    body = `<div class="tbl-wrap"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Departemen</th><th>Business Unit</th></tr></thead><tbody>
-      ${USERS.map(u=>`<tr><td>${esc(u.name)}</td><td class="mono">${esc(u.email)}</td><td>${esc(ROLE_CONFIG[u.role].label)}</td><td>${esc(deptById(u.dept).name)}</td><td>${u.bu? esc(buById(u.bu).name):'Semua BU'}</td></tr>`).join('')}
-    </tbody></table></div>`;
-  } else if(masterTab==='units'){
-    body = `<div class="tbl-wrap"><table><thead><tr><th>Plat</th><th>Tipe</th><th>Kapasitas</th><th>Pemilik</th></tr></thead><tbody>
-      ${UNITS.map(u=>`<tr><td class="mono">${esc(u.plate)}</td><td>${esc(u.type)}</td><td class="mono">${fmtNum(u.cap,0)} L</td><td>${esc(u.owner)}</td></tr>`).join('')}
-    </tbody></table></div>`;
-  } else if(masterTab==='vessels'){
-    body = `<div class="tbl-wrap"><table><thead><tr><th>Nama Vessel</th><th>IMO</th><th>Kapasitas</th></tr></thead><tbody>
-      ${VESSELS.map(v=>`<tr><td>${esc(v.name)}</td><td class="mono">${esc(v.imo)}</td><td class="mono">${fmtNum(v.cap,0)} KL</td></tr>`).join('')}
-    </tbody></table></div>`;
-  } else if(masterTab==='tanks'){
-    body = `<div class="tbl-wrap"><table><thead><tr><th>Tangki</th><th>Lokasi</th><th>Produk</th><th>Kapasitas</th></tr></thead><tbody>
-      ${TANKS.map(t=>`<tr><td class="mono">${esc(t.name)}</td><td>${esc(t.location)}</td><td>${esc(productById(t.product).name)}</td><td class="mono">${fmtNum(t.cap,0)} KL</td></tr>`).join('')}
-    </tbody></table></div>`;
-  } else if(masterTab==='permissions'){
-    body = `<div class="tbl-wrap"><table><thead><tr><th>Role</th><th class="wrap">Modul Dapat Diakses</th><th>Lingkup Data</th><th>Buat Data</th><th>Approve</th></tr></thead><tbody>
-      ${Object.keys(ROLE_CONFIG).map(k=>{
-        const r = ROLE_CONFIG[k];
-        return `<tr><td>${esc(r.label)}</td><td class="wrap mono" style="font-size:11px">${r.modules.filter(m=>m!=='dashboard').join(', ')||'—'}</td><td>${esc(r.scope)}</td><td>${r.canCreate?icon('check',14):'—'}</td><td>${r.canApprove?icon('check',14):'—'}</td></tr>`;
-      }).join('')}
-    </tbody></table></div>`;
-  }
-  document.getElementById('main').innerHTML = `
-    <div class="page-head"><div><div class="page-title">Master Data &amp; Konfigurasi Role</div><div class="page-desc">Referensi data induk dan matriks hak akses lintas divisi.</div></div></div>
-    <div class="master-tabs">${tabs.map(t=>`<button class="master-tab ${masterTab===t.key?'active':''}" data-tab="${t.key}">${esc(t.label)}</button>`).join('')}</div>
-    ${body}
-  `;
-  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click', ()=>{ masterTab=b.getAttribute('data-tab'); renderMaster(); }));
+function check(name,value,good){return `<div class="check-row"><span class="check-name">${name}</span><span class="${good?'text-good':'text-bad'} mono">${value}</span></div>`}
+function dischargePage(type='discharge'){
+  const isBarge=type==='marine_loading';
+  return `${pageTitle(isBarge?'Loading to Barge':'Discharge Cargo',isBarge?'Pencatatan custody transfer dari shore tank ke barge/kapal.':'Pencatatan data discharge vessel ke terminal oleh SPV operator, termasuk observed volume, volume @15°C, metric ton dan long ton.')}
+  <div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">${isBarge?'New Barge Loading Record':'New Discharge Record'}</div><div class="panel-sub">Custody data marine operation</div></div></div><div class="panel-body"><form id="marineForm" data-kind="${isBarge?'barge':'discharge'}"><div class="form-grid">
+    ${field(isBarge?'Barge / Vessel':'Vessel name','vessel','')}${field('Product','product','HSD')}${field('Observed volume (KL)','obs','0','number')}${field('Volume @15°C (KL)','at15','0','number')}${field('Metric tons (MT)','mt','0','number')}${field('Long tons (LT)','lt','0','number')}<div class="field span-2"><label>Custody reference</label><input name="reference" placeholder="B/L, CQD, tank ticket atau reference number"></div><div class="field span-4"><label>Remarks</label><textarea name="remarks" placeholder="Kondisi operasi, stop time, weather, tank transfer atau catatan custody lain."></textarea></div>
+  </div><div class="form-actions"><button class="btn btn-primary">Save Marine Record</button></div></form></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Latest Marine Operations</div><div class="panel-sub">Observed / @15 / mass summary</div></div></div><div class="panel-body">${state.discharge.map(d=>`<div class="alert"><div class="alert-top"><div class="alert-title">${d.id} · ${d.vessel}</div>${badge(d.status)}</div><div class="alert-meta">${d.type} · ${d.product}<br>OBS ${fmt(d.obs)} KL · @15 ${fmt(d.at15)} KL · ${fmt(d.mt)} MT · ${fmt(d.lt)} LT</div></div>`).join('')}</div></div></div>`;
 }
-
-/* ---------------- Router ---------------- */
-function renderMain(){
-  if(!hasAccess(state.module)) state.module='dashboard';
-  const map = {
-    dashboard:renderDashboard, inspection_pre:renderInspectionPre, inspection_after:renderInspectionAfter,
-    loading:renderLoading, receiving:renderReceiving, validation:renderValidation,
-    discharge:renderDischarge, ship_loading:renderShipLoading, master:renderMaster,
-  };
-  (map[state.module]||renderDashboard)();
+function adminPage(){
+  const rows=Object.entries(ROLE_CONFIG).map(([k,v])=>`<tr><td><div class="cell-main">${v.label}</div><div class="cell-sub">${k}</div></td><td>${v.site}</td><td>${v.scope}</td><td class="mono">${v.modules.length}</td><td>${k==='it_admin'?'<span class="badge bad">ALL DATA</span>':'<span class="badge good">SCOPED</span>'}</td></tr>`).join('');
+  return `${pageTitle('Access & Data Governance','Model role-based access untuk mencegah customer melihat data operasional Fuel Blending yang tidak terkait dengan shipment mereka.')}
+  <div class="layout-3">${kpi('Configured roles','6','Field, SPV, 3 customer, IT','95')}${kpi('Customer isolation','3 sites','RF · Mill · Maintank','100','text-good')}${kpi('Audit events',state.audit.length,'Prototype in-memory log','45')}</div>
+  <div class="panel"><div class="panel-head"><div><div class="panel-title">Role Access Matrix</div><div class="panel-sub">Prinsip least privilege berdasarkan site dan fungsi</div></div></div><div class="panel-body flush"><div class="table-wrap" style="border:0;border-radius:0"><table><thead><tr><th>Role</th><th>Site</th><th>Data Scope</th><th>Modules</th><th>Privilege</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>
+  <div style="height:14px"></div><div class="layout-2"><div class="panel"><div class="panel-head"><div><div class="panel-title">Recommended Backend Controls</div><div class="panel-sub">Wajib saat prototype dipindah ke Firebase / API backend</div></div></div><div class="panel-body"><div class="check-list">${['Role claim divalidasi di server, bukan hanya hide menu','Customer query wajib dibatasi destination/site claim','Custody packet dikunci setelah after inspection PASS','Setiap perubahan seal dan volume masuk audit log immutable','Upload bukti foto disimpan dengan checksum dan metadata','Alert volume / seal mismatch tidak dapat dihapus oleh receiving operator'].map(x=>`<div class="check-row"><span class="check-name">${x}</span><span class="badge good">REQUIRED</span></div>`).join('')}</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Recent Prototype Audit</div><div class="panel-sub">Aktivitas selama sesi browser ini</div></div></div><div class="panel-body">${state.audit.length?state.audit.slice(0,8).map(a=>`<div class="alert"><div class="alert-title">${a.action}</div><div class="alert-meta">${a.time} · ${a.role}<br>${a.detail}</div></div>`).join(''):'<div style="padding:25px;text-align:center;color:var(--dim)">Belum ada aktivitas baru pada sesi ini.</div>'}</div></div></div>`;
 }
-
-/* ---------------- Init ---------------- */
-function init(){
-  renderSidebar();
-  renderTopbar();
-  renderMain();
+function bindForms(){
+  const pre=$('#preForm'); if(pre)pre.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(pre));const id='PRE-'+Date.now().toString().slice(-8);state.inspections.unshift({...f,id,time:nowText()});audit('CREATE PRE-INSPECTION',`${id} · ${f.unitCode} · ${f.result}`);toast('Before loading inspection tersimpan');renderAll();};
+  const lf=$('#loadingForm'); if(lf){const calc=()=>{const f=new FormData(lf);const total=Number(f.get('flowEnd')||0)-Number(f.get('flowStart')||0);$('#calcFlow').value=fmt(total)+' L';};lf.addEventListener('input',calc);calc();lf.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(lf));const ins=state.inspections.find(i=>i.id===f.preId);const total=Number(f.flowEnd)-Number(f.flowStart);if(total<=0){toast('Flowmeter final harus lebih besar dari initial');return;}const id='SHP-'+Date.now().toString().slice(-9);state.shipments.unshift({id,preId:ins.id,dest:ins.destination,unitCode:ins.unitCode,plate:ins.plate,driver:ins.driver,transporter:ins.transporter,request:Number(f.request),flowStart:Number(f.flowStart),flowEnd:Number(f.flowEnd),total,soundingBefore:Number(f.soundingBefore),soundingAfter:Number(f.soundingAfter),seals:[],status:'AWAITING_AFTER',dispatchAt:null,eta:null,afterCondition:null,validation:null});audit('COMPLETE LOADING',`${id} · ${fmt(total)} L`);toast('Loading record selesai, menunggu after inspection');state.page='after_inspection';renderAll();};}
+  const af=$('#afterForm'); if(af)af.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(af));const s=state.shipments.find(x=>x.id===f.shipmentId);s.seals=[f.seal1,f.seal2,f.seal3,f.seal4].map(x=>x.trim());s.afterCondition=f.condition;s.status=f.condition==='Reject'?'HOLD':'IN_TRANSIT';s.dispatchAt=nowText();s.eta='Calculated by route service';audit('FINALIZE AFTER INSPECTION',`${s.id} · ${s.status} · seals locked`);toast('Custody packet terkunci dan dikirim ke destination');state.page='shipment_monitor';renderAll();};
+  const rf=$('#receivingForm'); if(rf){const sel=$('#receivingShipment');sel.onchange=()=>{const s=state.shipments.find(x=>x.id===sel.value);$('#dispatchPacket').innerHTML=dispatchPacket(s);autoFillReceiving(rf,s);};rf.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(rf));const s=state.shipments.find(x=>x.id===f.shipmentId);const received=Number(f.received);const diff=received-s.total;const tolerance=s.total*TOLERANCE_RATE;const volumePass=Math.abs(diff)<=tolerance;const given=[f.seal1,f.seal2,f.seal3,f.seal4].map(x=>x.trim().toUpperCase());const expected=s.seals.map(x=>x.trim().toUpperCase());const sealPass=JSON.stringify(given)===JSON.stringify(expected);const identityPass=f.unitCode.trim().toUpperCase()===s.unitCode.toUpperCase()&&f.plate.trim().toUpperCase()===s.plate.toUpperCase()&&f.driver.trim().toUpperCase()===s.driver.toUpperCase()&&f.transporter.trim().toUpperCase()===s.transporter.toUpperCase();const seriousDamage=f.damage==='Ada kerusakan serius';let risk='LOW';if(!sealPass||seriousDamage)risk='CRITICAL';else if(!volumePass||!identityPass)risk='HIGH';s.validation={received,diff,pct:Math.abs(diff)/s.total*100,tolerance,volumePass,sealPass,identityPass,risk,time:nowText(),notes:f.notes||''};s.status=(volumePass&&sealPass&&identityPass&&!seriousDamage)?'RECEIVED':'HOLD';audit('RECEIVING VALIDATION',`${s.id} · ${s.status} · variance ${fmt(diff)} L · risk ${risk}`);toast(s.status==='RECEIVED'?'Receiving valid dan shipment ditutup':'Exception terdeteksi — shipment masuk HOLD');state.page='site_history';renderAll();};}
+  const mf=$('#marineForm');if(mf)mf.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(mf));const kind=mf.dataset.kind;const id=(kind==='barge'?'BL-':'DC-')+Date.now().toString().slice(-8);state.discharge.unshift({id,type:kind==='barge'?'Shore Tank → Barge':'Vessel → Shore Tank',vessel:f.vessel,product:f.product,obs:Number(f.obs),at15:Number(f.at15),mt:Number(f.mt),lt:Number(f.lt),status:'COMPLETED',time:nowText()});audit('CREATE MARINE RECORD',`${id} · ${f.vessel}`);toast('Marine custody record tersimpan');renderAll();};
 }
-init();
+function autoFillReceiving(form,s){['unitCode','plate','driver','transporter'].forEach(k=>{if(form.elements[k])form.elements[k].value=s[k]});['seal1','seal2','seal3','seal4'].forEach((k,i)=>{if(form.elements[k])form.elements[k].value=s.seals[i]||''});if(form.elements.received)form.elements.received.value=s.total;}
+function goPage(p){if(role().modules.includes(p)){state.page=p;renderAll()}}
+window.goPage=goPage;
+function renderPage(){
+  const pages={dashboard,pre_inspection:preInspection,loading:loadingPage,after_inspection:afterInspection,shipment_monitor:shipmentMonitor,receiving:receivingPage,site_history:siteHistory,validation:validationPage,discharge:()=>dischargePage('discharge'),marine_loading:()=>dischargePage('marine_loading'),admin:adminPage};
+  if(!role().modules.includes(state.page))state.page='dashboard';
+  $('#content').innerHTML=(pages[state.page]||dashboard)();
+  $('#crumb').textContent=NAV.flatMap(x=>x.items).find(x=>x[0]===state.page)?.[2]||'Dashboard';
+  bindForms();
+}
+function renderAll(){renderIdentity();renderNav();renderTicker();renderPage();}
+function closeMenu(){$('#sidebar').classList.remove('open');$('#overlay').classList.remove('show')}
+$('#menuBtn').onclick=()=>{$('#sidebar').classList.toggle('open');$('#overlay').classList.toggle('show')};$('#overlay').onclick=closeMenu;
+setInterval(()=>$('#clock').textContent=new Date().toLocaleString('id-ID',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),1000);
+setupRoles();renderAll();
 </script>
 </body>
 </html>

@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PTSI Custody Ledger — Sistem Validasi Operasi Lintas Divisi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-0:#0A0D10; --bg-1:#12171C; --bg-2:#171E24; --bg-3:#1D262D;
+  --border:#262F37; --border-soft:#1C242B;
+  --text-0:#ECF1F4; --text-1:#A8B3BB; --text-2:#69747C;
+  --amber:#F0A63A; --amber-soft:#3A2E17; --amber-line:#5C4622;
+  --teal:#3FC0AC; --teal-soft:#132C29;
+  --green:#3BC988; --green-soft:#12271D;
+  --red:#F0554C; --red-soft:#2B1614;
+  --blue:#5B9BD5; --blue-soft:#14232F;
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif; --display:'Syne',sans-serif;
+  --radius:8px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg-0); color:var(--text-0); font-family:var(--sans);
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--amber); color:#1a1305;}
+a{color:inherit;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:13px;}
+:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+::-webkit-scrollbar{width:10px; height:10px;}
+::-webkit-scrollbar-track{background:var(--bg-1);}
+::-webkit-scrollbar-thumb{background:var(--bg-3); border-radius:5px;}
+
+/* ---------- Shell ---------- */
+#shell{display:flex; min-height:100vh;}
+#sidebar{
+  width:252px; flex:none; background:var(--bg-1); border-right:1px solid var(--border-soft);
+  display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:40;
+  transition:transform .2s ease;
+}
+#content{margin-left:252px; flex:1; min-width:0; display:flex; flex-direction:column;}
+.brand{padding:20px 18px 16px; border-bottom:1px solid var(--border-soft);}
+.brand-mark{display:flex; align-items:center; gap:10px;}
+.brand-badge{
+  width:34px; height:34px; border-radius:7px; background:linear-gradient(155deg,var(--amber),#c97e1c);
+  display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:800;
+  color:#1a1305; font-size:14px; flex:none;
+}
+.brand-text .brand-title{font-family:var(--display); font-weight:800; font-size:15px; letter-spacing:.02em;}
+.brand-text .brand-sub{font-size:10.5px; color:var(--text-2); font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; margin-top:1px;}
+
+.nav{flex:1; overflow-y:auto; padding:14px 10px;}
+.nav-group{margin-bottom:16px;}
+.nav-group-label{font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-2); font-family:var(--mono); padding:0 10px; margin-bottom:6px;}
+.nav-item{
+  display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:7px; color:var(--text-1);
+  font-size:13.2px; font-weight:500; margin-bottom:2px; border:1px solid transparent; text-decoration:none;
+}
+.nav-item svg{flex:none; opacity:.85;}
+.nav-item:hover{background:var(--bg-2); color:var(--text-0);}
+.nav-item.active{background:var(--amber-soft); border-color:var(--amber-line); color:var(--amber);}
+.nav-item.active svg{opacity:1;}
+.nav-badge{margin-left:auto; font-family:var(--mono); font-size:10px; background:var(--bg-3); color:var(--text-1); padding:1px 6px; border-radius:20px;}
+
+.sidebar-foot{border-top:1px solid var(--border-soft); padding:14px; background:var(--bg-1);}
+.role-switch label{display:block; font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); font-family:var(--mono); margin-bottom:6px;}
+.role-switch select{
+  width:100%; background:var(--bg-2); border:1px solid var(--border); color:var(--text-0);
+  padding:8px 9px; border-radius:6px; font-size:12.5px;
+}
+.role-meta{margin-top:9px; font-size:11px; color:var(--text-2); line-height:1.6;}
+.role-meta b{color:var(--text-1); font-weight:600;}
+.scope-pill{display:inline-block; margin-top:6px; font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:20px; background:var(--teal-soft); color:var(--teal); border:1px solid #1d4a44;}
+
+/* ---------- Topbar ---------- */
+#topbar{
+  height:58px; flex:none; border-bottom:1px solid var(--border-soft); background:rgba(10,13,16,.85);
+  backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:space-between; padding:0 22px;
+  position:sticky; top:0; z-index:30;
+}
+.crumb{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-2); font-family:var(--mono);}
+.crumb b{color:var(--text-0); font-weight:600;}
+#menuToggle{display:none; background:none; border:1px solid var(--border); color:var(--text-1); border-radius:6px; padding:7px 9px; margin-right:8px;}
+.topbar-right{display:flex; align-items:center; gap:14px;}
+.clock{font-family:var(--mono); font-size:11.5px; color:var(--text-2);}
+.user-chip{display:flex; align-items:center; gap:8px; background:var(--bg-2); border:1px solid var(--border); padding:6px 10px 6px 6px; border-radius:20px;}
+.user-avatar{width:24px; height:24px; border-radius:50%; background:var(--teal-soft); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; font-family:var(--mono);}
+.user-chip-name{font-size:12px; font-weight:600;}
+.user-chip-role{font-size:10px; color:var(--text-2);}
+
+/* ---------- Main ---------- */
+#main{padding:24px 26px 60px; max-width:1400px; width:100%; margin:0 auto;}
+.page-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap;}
+.page-title{font-family:var(--display); font-weight:700; font-size:22px; letter-spacing:.01em;}
+.page-desc{color:var(--text-2); font-size:12.8px; margin-top:4px; max-width:560px;}
+.page-actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+.btn{
+  display:inline-flex; align-items:center; gap:7px; padding:9px 14px; border-radius:7px; font-size:12.8px;
+  font-weight:600; border:1px solid var(--border); background:var(--bg-2); color:var(--text-0);
+}
+.btn:hover{background:var(--bg-3);}
+.btn-primary{background:var(--amber); color:#1a1305; border-color:var(--amber);}
+.btn-primary:hover{background:#f5b658;}
+.btn-ghost{background:transparent;}
+.btn-sm{padding:6px 10px; font-size:11.8px;}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+
+/* KPI cards */
+.kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px;}
+.kpi-card{background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius); padding:16px;}
+.kpi-label{font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:.06em; font-family:var(--mono);}
+.kpi-value{font-family:var(--display); font-size:26px; font-weight:700; margin-top:8px;}
+.kpi-sub{font-size:11.5px; color:var(--text-2); margin-top:4px;}
+.kpi-accent{width:26px; height:3px; border-radius:2px; margin-top:10px;}
+
+.dash-grid{display:grid; grid-template-columns:1.4fr 1fr; gap:14px; align-items:start;}
+@media(max-width:980px){.dash-grid{grid-template-columns:1fr;} .kpi-grid{grid-template-columns:repeat(2,1fr);}}
+
+.panel{background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius); overflow:hidden;}
+.panel-head{padding:14px 16px; border-bottom:1px solid var(--border-soft); display:flex; align-items:center; justify-content:space-between;}
+.panel-title{font-weight:700; font-size:13.5px;}
+.panel-body{padding:4px 0;}
+.activity-row{display:flex; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border-soft); align-items:flex-start;}
+.activity-row:last-child{border-bottom:none;}
+.activity-dot{width:7px; height:7px; border-radius:50%; margin-top:6px; flex:none;}
+.activity-text{font-size:12.3px;}
+.activity-text b{font-weight:600;}
+.activity-time{font-size:10.5px; color:var(--text-2); font-family:var(--mono); margin-top:2px;}
+.followup-row{padding:11px 16px; border-bottom:1px solid var(--border-soft); font-size:12.3px;}
+.followup-row:last-child{border-bottom:none;}
+.followup-row .ff-title{font-weight:600; margin-bottom:2px;}
+.followup-row .ff-meta{color:var(--text-2); font-size:11px;}
+.empty-note{padding:22px 16px; text-align:center; color:var(--text-2); font-size:12.3px;}
+
+/* Filter bar */
+.filter-bar{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius); padding:12px 14px; margin-bottom:14px;}
+.filter-field{display:flex; flex-direction:column; gap:5px;}
+.filter-field label{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-2); font-family:var(--mono);}
+.filter-field input,.filter-field select{background:var(--bg-2); border:1px solid var(--border); color:var(--text-0); padding:7px 9px; border-radius:6px; min-width:130px;}
+.filter-field.grow{flex:1; min-width:180px;}
+.filter-field.grow input{width:100%;}
+
+/* Table */
+.tbl-wrap{overflow-x:auto; background:var(--bg-1); border:1px solid var(--border-soft); border-radius:var(--radius);}
+table{border-collapse:collapse; width:100%; min-width:760px;}
+thead th{
+  text-align:left; font-size:10.3px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-2);
+  font-family:var(--mono); padding:10px 12px; border-bottom:1px solid var(--border); white-space:nowrap; background:var(--bg-2);
+  position:sticky; top:0;
+}
+tbody td{padding:11px 12px; border-bottom:1px solid var(--border-soft); font-size:12.6px; vertical-align:middle; white-space:nowrap;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--bg-2);}
+td.wrap,th.wrap{white-space:normal;}
+.mono{font-family:var(--mono); font-size:11.8px;}
+.cell-sub{font-size:10.6px; color:var(--text-2); margin-top:2px;}
+
+.badge{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; font-family:var(--mono); white-space:nowrap;}
+.badge-good{background:var(--green-soft); color:var(--green);}
+.badge-reject{background:var(--red-soft); color:var(--red);}
+.badge-pending{background:var(--blue-soft); color:var(--blue);}
+.badge-draft{background:var(--bg-3); color:var(--text-1);}
+.badge-progress{background:var(--amber-soft); color:var(--amber);}
+
+.seal-chip{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-family:var(--mono); font-weight:600;}
+.seal-chip svg{flex:none;}
+.seal-ok{color:var(--green);}
+.seal-bad{color:var(--red);}
+
+.sound-strip{display:flex; flex-direction:column; gap:3px; min-width:118px;}
+.sound-track{position:relative; height:6px; background:var(--bg-3); border-radius:3px; overflow:hidden;}
+.sound-fill{position:absolute; top:0; bottom:0; left:0; background:linear-gradient(90deg,var(--teal-soft),var(--teal)); border-radius:3px;}
+.sound-labels{display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--text-2);}
+
+.empty-row td{text-align:center; color:var(--text-2); padding:34px 12px;}
+
+/* Modal */
+.overlay{position:fixed; inset:0; background:rgba(6,8,10,.62); backdrop-filter:blur(2px); display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; z-index:100; overflow-y:auto;}
+.modal{background:var(--bg-1); border:1px solid var(--border); border-radius:12px; width:100%; max-width:560px; overflow:hidden;}
+.modal-head{padding:16px 20px; border-bottom:1px solid var(--border-soft); display:flex; align-items:center; justify-content:space-between;}
+.modal-title{font-family:var(--display); font-weight:700; font-size:16px;}
+.modal-close{background:none; border:none; color:var(--text-2); padding:4px;}
+.modal-body{padding:18px 20px; max-height:70vh; overflow-y:auto;}
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.form-field{display:flex; flex-direction:column; gap:6px; margin-bottom:12px;}
+.form-field.full{grid-column:1/-1;}
+.form-field label{font-size:11.3px; font-weight:600; color:var(--text-1);}
+.form-field input,.form-field select,.form-field textarea{background:var(--bg-2); border:1px solid var(--border); color:var(--text-0); padding:9px 10px; border-radius:6px; width:100%;}
+.form-field .hint{font-size:10.5px; color:var(--text-2);}
+.form-field .calc{font-family:var(--mono); font-size:12px; color:var(--teal); margin-top:2px;}
+.modal-foot{padding:14px 20px; border-top:1px solid var(--border-soft); display:flex; justify-content:flex-end; gap:8px;}
+
+.toast-wrap{position:fixed; bottom:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:8px;}
+.toast{background:var(--bg-2); border:1px solid var(--border); border-left:3px solid var(--teal); padding:11px 16px; border-radius:7px; font-size:12.5px; box-shadow:0 8px 24px rgba(0,0,0,.4); min-width:220px;}
+
+.info-strip{display:flex; gap:10px; align-items:flex-start; background:var(--teal-soft); border:1px solid #1d4a44; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:12px; color:var(--text-1);}
+.info-strip svg{flex:none; color:var(--teal); margin-top:1px;}
+
+.master-tabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+.master-tab{padding:8px 13px; border-radius:7px; font-size:12px; font-weight:600; background:var(--bg-2); border:1px solid var(--border); color:var(--text-1);}
+.master-tab.active{background:var(--amber-soft); border-color:var(--amber-line); color:var(--amber);}
+
+.note-foot{margin-top:26px; padding-top:14px; border-top:1px solid var(--border-soft); font-size:11px; color:var(--text-2); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+
+@media(max-width:900px){
+  #sidebar{transform:translateX(-100%);}
+  #sidebar.open{transform:translateX(0);}
+  #content{margin-left:0;}
+  #menuToggle{display:inline-flex;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="shell">
+  <aside id="sidebar"></aside>
+  <div id="content">
+    <header id="topbar"></header>
+    <main id="main"></main>
+  </div>
+</div>
+<div id="modalRoot"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ======================================================================
+   PTSI CUSTODY LEDGER — prototype front-end (data in-memory, per sesi)
+   ====================================================================== */
+
+/* ---------------- Icons ---------------- */
+const ICN = {
+  grid:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>',
+  clipboard:'<path d="M9 3h6a1 1 0 0 1 1 1v1h1.5A1.5 1.5 0 0 1 19 6.5v13A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-13A1.5 1.5 0 0 1 6.5 5H8V4a1 1 0 0 1 1-1z"/><path d="M8.5 5h7"/>',
+  clipCheck:'<path d="M9 3h6a1 1 0 0 1 1 1v1h1.5A1.5 1.5 0 0 1 19 6.5v13A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-13A1.5 1.5 0 0 1 6.5 5H8V4a1 1 0 0 1 1-1z"/><path d="M8.5 5h7"/><path d="M9 13.5l2 2 4-4.5"/>',
+  truck:'<path d="M3 7h11v9H3z"/><path d="M14 11h4l3 3v2h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/>',
+  tank:'<path d="M4 9c0-2 3.5-3.5 8-3.5S20 7 20 9v7c0 2-3.5 3.5-8 3.5S4 18 4 16z"/><path d="M4 9c0 2 3.5 3.5 8 3.5S20 11 20 9"/>',
+  scale:'<path d="M12 3v18M6 7h12M6 7l-3 6a3 3 0 0 0 6 0zM18 7l-3 6a3 3 0 0 0 6 0z"/>',
+  ship:'<path d="M4 14l1.5 5.2c.2.6.8 1 1.4 1h10.2c.6 0 1.2-.4 1.4-1L20 14z"/><path d="M6 14V9h9l3 5"/><path d="M9 9V5h3v4"/>',
+  anchor:'<circle cx="12" cy="5" r="2"/><path d="M12 7v13M6 12H2a10 10 0 0 0 10 9 10 10 0 0 0 10-9h-4"/>',
+  db:'<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  x:'<path d="M18 6L6 18M6 6l12 12"/>',
+  check:'<path d="M4 12l5 5L20 6"/>',
+  alert:'<path d="M12 3l10 18H2z"/><path d="M12 9v5M12 17h.01"/>',
+  download:'<path d="M12 3v13m0 0l-4-4m4 4l4-4"/><path d="M4 20h16"/>',
+  filter:'<path d="M4 5h16l-6 8v6l-4-2v-4z"/>',
+  lock:'<rect x="5" y="10.5" width="14" height="9" rx="1.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>',
+  unlock:'<rect x="5" y="10.5" width="14" height="9" rx="1.5"/><path d="M8 10.5V7a4 4 0 0 1 7.4-2.1"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>'
+};
+function icon(name,size=17){ return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICN[name]||''}</svg>`; }
+
+/* ---------------- Reference / master data ---------------- */
+const BUS = [
+  {id:'bu1', name:'Fuel Terminal Balikpapan'},
+  {id:'bu2', name:'Marine Operations'},
+  {id:'bu3', name:'Distribution & Depot Samarinda'},
+];
+const DEPTS = [
+  {id:'d1', name:'Terminal Ops Balikpapan', bu:'bu1'},
+  {id:'d2', name:'Quality Assurance', bu:'bu1'},
+  {id:'d3', name:'HSE', bu:'bu1'},
+  {id:'d4', name:'Management', bu:'bu1'},
+  {id:'d5', name:'Marine Survey', bu:'bu2'},
+  {id:'d6', name:'Depot Samarinda', bu:'bu3'},
+  {id:'d7', name:'Direksi', bu:null},
+  {id:'d8', name:'IT', bu:null},
+];
+const PRODUCTS = [
+  {id:'p1', name:'HSD / Solar'},
+  {id:'p2', name:'B35'},
+  {id:'p3', name:'Pertalite'},
+  {id:'p4', name:'Pertamax'},
+];
+const TANKS = [
+  {id:'t1', name:'T-101', location:'Terminal Balikpapan', product:'p1', cap:5000},
+  {id:'t2', name:'T-102', location:'Terminal Balikpapan', product:'p2', cap:5000},
+  {id:'t3', name:'D-201', location:'Depot Samarinda', product:'p1', cap:2000},
+  {id:'t4', name:'D-202', location:'Depot Samarinda', product:'p2', cap:2000},
+];
+const UNITS = [
+  {id:'u1', plate:'KT 8123 UY', type:'Tangki Truk', cap:16000, owner:'Trans Kalimantan Logistik'},
+  {id:'u2', plate:'KT 8456 UY', type:'Tangki Truk', cap:16000, owner:'Trans Kalimantan Logistik'},
+  {id:'u3', plate:'KT 9012 XZ', type:'Tangki Truk', cap:24000, owner:'Borneo Fuel Carrier'},
+  {id:'u4', plate:'KT 7788 UY', type:'Tangki Truk', cap:16000, owner:'Trans Kalimantan Logistik'},
+];
+const VESSELS = [
+  {id:'v1', name:'MT. Borneo Prima', imo:'9456123', cap:3500},
+  {id:'v2', name:'MT. Kalimantan Jaya', imo:'9782341', cap:5000},
+  {id:'v3', name:'TB. Mahakam Sentosa', imo:'9123456', cap:1800},
+];
+
+/* ---------------- Users & roles ---------------- */
+const USERS = [
+  {email:'inspector1@ptsi.co.id', name:'Andi Wibowo', role:'inspector', dept:'d1', bu:'bu1'},
+  {email:'operator1@ptsi.co.id', name:'Rudi Hartono', role:'operator', dept:'d1', bu:'bu1'},
+  {email:'surveyor1@ptsi.co.id', name:'Fajar Nugroho', role:'surveyor', dept:'d5', bu:'bu2'},
+  {email:'receiving1@ptsi.co.id', name:'Siti Aminah', role:'receiving', dept:'d6', bu:'bu3'},
+  {email:'validator1@ptsi.co.id', name:'Dewi Lestari', role:'validator', dept:'d2', bu:'bu1'},
+  {email:'supervisor1@ptsi.co.id', name:'Bambang Setiawan', role:'supervisor', dept:'d1', bu:'bu1'},
+  {email:'hse1@ptsi.co.id', name:'Yuni Kartika', role:'hse', dept:'d3', bu:'bu1'},
+  {email:'manager1@ptsi.co.id', name:'Hendra Gunawan', role:'manager', dept:'d4', bu:'bu1'},
+  {email:'direksi1@ptsi.co.id', name:'Dr. Herman Susanto', role:'direksi', dept:'d7', bu:null},
+  {email:'admin1@ptsi.co.id', name:'Kim (IT Admin)', role:'admin', dept:'d8', bu:null},
+];
+
+const ROLE_CONFIG = {
+  inspector:  {label:'Inspector Lapangan', modules:['dashboard','inspection_pre','inspection_after'], scope:'own', canCreate:true, canApprove:false},
+  operator:   {label:'Operator Loading', modules:['dashboard','loading'], scope:'own', canCreate:true, canApprove:false},
+  surveyor:   {label:'Surveyor Marine', modules:['dashboard','discharge','ship_loading'], scope:'department', canCreate:true, canApprove:false},
+  receiving:  {label:'Receiving Officer', modules:['dashboard','receiving'], scope:'cross_validation', canCreate:true, canApprove:false},
+  validator:  {label:'Validator / QC', modules:['dashboard','validation'], scope:'all', canCreate:false, canApprove:true},
+  supervisor: {label:'Supervisor Terminal', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation'], scope:'department', canCreate:true, canApprove:true},
+  hse:        {label:'HSE Officer', modules:['dashboard','inspection_pre','inspection_after','discharge'], scope:'business_unit', canCreate:false, canApprove:false},
+  manager:    {label:'Manager / Kepala Divisi', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation','discharge','ship_loading'], scope:'business_unit', canCreate:false, canApprove:false},
+  direksi:    {label:'Direksi', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation','discharge','ship_loading'], scope:'all', canCreate:false, canApprove:false},
+  admin:      {label:'IT Admin', modules:['dashboard','inspection_pre','inspection_after','loading','receiving','validation','discharge','ship_loading','master'], scope:'all', canCreate:true, canApprove:true},
+};
+
+const NAV_GROUPS = [
+  {label:'Overview', items:[{key:'dashboard', label:'Dashboard', icon:'grid'}]},
+  {label:'Lapangan', items:[
+    {key:'inspection_pre', label:'Inspeksi Pre-Loading', icon:'clipboard'},
+    {key:'inspection_after', label:'Inspeksi After-Loading', icon:'clipCheck'},
+    {key:'loading', label:'Loading', icon:'truck'},
+  ]},
+  {label:'Validasi Custody', items:[
+    {key:'receiving', label:'Receiving', icon:'tank'},
+    {key:'validation', label:'Validasi Volume', icon:'scale'},
+  ]},
+  {label:'Marine', items:[
+    {key:'discharge', label:'Discharge Cargo', icon:'anchor'},
+    {key:'ship_loading', label:'Loading ke Kapal', icon:'ship'},
+  ]},
+  {label:'Sistem', items:[{key:'master', label:'Master Data', icon:'db'}]},
+];
+
+/* ---------------- Seed transactional data ---------------- */
+const DB = {
+  inspectionPre:[
+    r_ip('IP-001','2026-07-10T08:05','u1','Good','','SL-P10001'),
+    r_ip('IP-002','2026-07-10T09:20','u2','Good','','SL-P10002'),
+    r_ip('IP-003','2026-07-11T08:12','u3','Reject','Kebocoran valve bawah','SL-P10003'),
+    r_ip('IP-004','2026-07-11T10:40','u1','Good','','SL-P10004'),
+    r_ip('IP-005','2026-07-12T08:00','u4','Good','','SL-P10005'),
+    r_ip('IP-006','2026-07-13T08:30','u2','Reject','Seal gembok rusak','SL-P10006'),
+    r_ip('IP-007','2026-07-14T09:00','u1','Good','','SL-P10007'),
+    r_ip('IP-008','2026-07-15T08:20','u3','Good','','SL-P10008'),
+    r_ip('IP-009','2026-07-16T08:10','u4','Good','','SL-P10009'),
+    r_ip('IP-010','2026-07-17T07:55','u2','Good','','SL-P10010'),
+  ],
+  loading:[
+    r_ld('LD-001','u1','t1','2026-07-10T08:20','2026-07-10T08:55','Depot Samarinda',1500,1537,15.54,15.60,402150,417750,'SL-40001','Completed'),
+    r_ld('LD-002','u2','t1','2026-07-10T09:40','2026-07-10T10:10','Depot Samarinda',1537,1580,18.06,18.00,417750,435750,'SL-40002','Completed'),
+    r_ld('LD-003','u3','t2','2026-07-11T08:25','2026-07-11T09:02','Depot Samarinda',1200,1254,22.68,22.60,561200,583800,'SL-40003','Completed'),
+    r_ld('LD-004','u1','t1','2026-07-11T10:15','2026-07-11T10:48','Depot Samarinda',1580,1617,15.54,15.50,435750,451250,'SL-40004','Completed'),
+    r_ld('LD-005','u4','t2','2026-07-12T08:05','2026-07-12T08:34','Depot Samarinda',1254,1288,14.28,14.90,583800,598700,'SL-40005','Completed'),
+    r_ld('LD-006','u2','t1','2026-07-13T08:50','2026-07-13T09:24','Depot Samarinda',1617,1663,19.32,19.25,451250,470500,'SL-40006','Completed'),
+    r_ld('LD-007','u1','t2','2026-07-14T09:10','2026-07-14T09:41','Depot Samarinda',1288,1326,15.96,16.00,598700,614700,'SL-40007','Completed'),
+    r_ld('LD-008','u3','t1','2026-07-15T08:35','2026-07-15T09:12','Depot Samarinda',1663,1717,22.68,22.55,470500,493050,'SL-40008','Completed'),
+    r_ld('LD-009','u4','t2','2026-07-16T08:15','2026-07-16T08:44','Depot Samarinda',1326,1360,14.28,14.30,614700,629000,'SL-40009','Completed'),
+    r_ld('LD-010','u2','t1','2026-07-17T07:50','2026-07-17T08:18','Depot Samarinda',1717,1750,13.86,13.90,493050,506950,'SL-40010','Draft'),
+  ],
+  inspectionAfter:[
+    r_ia('IA-001','LD-001','2026-07-10T09:05','Good','SL-40001','Seal terpasang rapi'),
+    r_ia('IA-002','LD-002','2026-07-10T10:20','Good','SL-40002',''),
+    r_ia('IA-003','LD-003','2026-07-11T09:15','Good','SL-40003',''),
+    r_ia('IA-004','LD-004','2026-07-11T11:00','Good','SL-40004',''),
+    r_ia('IA-005','LD-005','2026-07-12T08:45','Good','SL-40005',''),
+    r_ia('IA-006','LD-006','2026-07-13T09:35','Reject','SL-40006','Seal retak saat pengecekan akhir, unit ditahan sementara'),
+    r_ia('IA-007','LD-007','2026-07-14T09:50','Good','SL-40007',''),
+    r_ia('IA-008','LD-008','2026-07-15T09:25','Good','SL-40008',''),
+    r_ia('IA-009','LD-009','2026-07-16T08:55','Good','SL-40009',''),
+  ],
+  receiving:[
+    r_rc('RC-001','LD-001','t3','2026-07-10T14:10',800,844,15.40,15.58,'SL-40001'),
+    r_rc('RC-002','LD-002','t3','2026-07-10T15:30',844,895,17.85,17.97,'SL-40002'),
+    r_rc('RC-003','LD-003','t4','2026-07-11T13:50',600,665,22.75,22.58,'SL-40099'),
+    r_rc('RC-004','LD-004','t3','2026-07-11T16:20',895,939,15.40,15.48,'SL-40004'),
+    r_rc('RC-005','LD-005','t4','2026-07-12T13:15',665,707,14.70,14.60,'SL-40005'),
+    r_rc('RC-006','LD-006','t3','2026-07-13T13:40',939,992,18.55,19.20,'SL-40006'),
+    r_rc('RC-007','LD-007','t4','2026-07-14T14:40',707,750,15.05,15.95,'SL-40007'),
+    r_rc('RC-008','LD-008','t3','2026-07-15T14:05',992,1057,22.75,22.50,'SL-40008'),
+  ],
+  discharge:[
+    r_dc('DC-001','v1','t1','2026-07-11T06:00','2026-07-11T14:30',8500,3100,1200,2830,1850.40,1846.90,'SD-20001','Completed'),
+    r_dc('DC-002','v2','t2','2026-07-13T07:15','2026-07-13T16:40',9200,2400,1254,4020,2705.10,2698.60,'SD-20002','Completed'),
+    r_dc('DC-003','v3','t1','2026-07-16T06:30','2026-07-16T13:10',6100,4300,2830,3550,720.00,718.40,'SD-20003','In Progress'),
+    r_dc('DC-004','v1','t2','2026-07-09T06:45','2026-07-09T15:20',7600,2950,900,3120,1420.30,1417.80,'SD-20004','Completed'),
+    r_dc('DC-005','v2','t1','2026-07-14T07:00','2026-07-14T16:10',8100,2600,1717,4520,1980.60,1975.20,'SD-20005','Completed'),
+  ],
+  shipLoading:[
+    r_sh('SH-001','t1','v1','2026-07-10T07:00','2026-07-10T15:40',3200,2100,900,2700,1650.20,1647.50,'SG-30001','Completed'),
+    r_sh('SH-002','t2','v2','2026-07-12T06:40','2026-07-12T16:20',4400,2600,1288,3610,2100.80,2096.40,'SG-30002','Completed'),
+    r_sh('SH-003','t1','v3','2026-07-15T07:10','2026-07-15T13:50',2600,1900,1717,2570,980.50,978.90,'SG-30003','Completed'),
+    r_sh('SH-004','t2','v1','2026-07-17T06:50',null,3900,null,1360,2280,1320.00,null,'SG-30004','In Progress'),
+    r_sh('SH-005','t1','v2','2026-07-08T06:30','2026-07-08T14:50',3400,2050,700,2600,1750.30,1744.10,'SG-30005','Completed'),
+  ],
+  validationApprovals:{}, // { loadingId: {by, at, remarks} }
+};
+function r_ip(id,dt,unit,result,reason,seal){return {id,dt,unit,result,reason,seal,inspector:'inspector1@ptsi.co.id',dept:'d1',bu:'bu1'};}
+function r_ld(id,unit,tank,dtStart,dtEnd,dest,sBefore,sAfter,volSound,volFlow,fmStart,fmEnd,seal,status){
+  return {id,unit,tank,dtStart,dtEnd,dest,sBefore,sAfter,volSound,volFlow,fmStart,fmEnd,seal,status,operator:'operator1@ptsi.co.id',dept:'d1',bu:'bu1'};
+}
+function r_ia(id,loadingId,dt,result,seal,remarks){return {id,loadingId,dt,result,seal,remarks,inspector:'inspector1@ptsi.co.id',dept:'d1',bu:'bu1'};}
+function r_rc(id,loadingId,tank,dt,sBefore,sAfter,volSound,volFlow,seal){
+  return {id,loadingId,tank,dt,sBefore,sAfter,volSound,volFlow,seal,receiver:'receiving1@ptsi.co.id',dept:'d6',bu:'bu3'};
+}
+function r_dc(id,vessel,tank,dtStart,dtEnd,vBefore,vAfter,tBefore,tAfter,volVessel,volTank,seal,status){
+  return {id,vessel,tank,dtStart,dtEnd,vBefore,vAfter,tBefore,tAfter,volVessel,volTank,seal,status,surveyor:'surveyor1@ptsi.co.id',dept:'d5',bu:'bu2'};
+}
+function r_sh(id,tank,vessel,dtStart,dtEnd,tBefore,tAfter,vBefore,vAfter,volTank,volVessel,seal,status){
+  return {id,tank,vessel,dtStart,dtEnd,tBefore,tAfter,vBefore,vAfter,volTank,volVessel,seal,status,surveyor:'surveyor1@ptsi.co.id',dept:'d5',bu:'bu2'};
+}
+function DB_LD(id){ return DB.loading.find(l=>l.id===id); }
+
+/* ---------------- State ---------------- */
+const state = { role:'admin', module:'dashboard', filters:{}, idSeq:{ip:11,ia:10,ld:11,rc:9,dc:6,sh:6} };
+
+/* ---------------- Helpers ---------------- */
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(iso,opts){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  const base = {day:'2-digit',month:'short',year:'numeric'};
+  const withTime = opts&&opts.time!==false;
+  return d.toLocaleString('id-ID', withTime? {...base,hour:'2-digit',minute:'2-digit'} : base);
+}
+function fmtNum(n,dec=2){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function findUser(email){ return USERS.find(u=>u.email===email); }
+function unitById(id){ return UNITS.find(u=>u.id===id); }
+function vesselById(id){ return VESSELS.find(v=>v.id===id); }
+function tankById(id){ return TANKS.find(t=>t.id===id); }
+function productById(id){ return PRODUCTS.find(p=>p.id===id); }
+function deptById(id){ return DEPTS.find(d=>d.id===id); }
+function buById(id){ return BUS.find(b=>b.id===id); }
+
+function currentRole(){ return ROLE_CONFIG[state.role]; }
+function currentUser(){ return USERS.find(u=>u.role===state.role); }
+function hasAccess(moduleKey){ return currentRole().modules.includes(moduleKey); }
+
+function filterByScope(list){
+  const role = currentRole(), user = currentUser();
+  if(role.scope==='all') return list;
+  if(role.scope==='business_unit') return list.filter(r=>r.bu===user.bu);
+  if(role.scope==='department') return list.filter(r=>r.dept===user.dept);
+  if(role.scope==='own') return list.filter(r=>(r.inspector||r.operator||r.surveyor||r.receiver)===user.email);
+  if(role.scope==='cross_validation') return list.filter(r=>r.dept===user.dept || (r.inspector||r.operator||r.surveyor||r.receiver)===user.email);
+  return list;
+}
+
+function toast(msg){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className='toast'; el.textContent=msg;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(), 3600);
+}
+
+function downloadCSV(filename, rows, columns){
+  const header = columns.map(c=>c.label).join(',');
+  const body = rows.map(r=>columns.map(c=>{
+    let v = c.get(r);
+    v = (v==null?'':String(v)).replace(/"/g,'""');
+    return /[",\n]/.test(v) ? `"${v}"` : v;
+  }).join(',')).join('\n');
+  const blob = new Blob([header+'\n'+body], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+  toast('File CSV diunduh: '+filename);
+}
+
+function badge(text,type){ return `<span class="badge badge-${type}">${esc(text)}</span>`; }
+function resultBadge(result){
+  if(result==='Good') return badge('Good','good');
+  if(result==='Reject') return badge('Reject','reject');
+  return badge(result,'draft');
+}
+function statusBadge(status){
+  const map = {Completed:'good', Draft:'draft', 'In Progress':'progress', Matched:'good', Discrepancy:'reject', Pending:'pending'};
+  return badge(status, map[status]||'draft');
+}
+function sealChip(match){
+  return match
+    ? `<span class="seal-chip seal-ok">${icon('lock',14)} Cocok</span>`
+    : `<span class="seal-chip seal-bad">${icon('unlock',14)} Tidak Cocok</span>`;
+}
+function soundStrip(before,after,max=2400){
+  if(before==null||after==null) return '<span class="cell-sub">—</span>';
+  const pB = Math.min(100, (before/max)*100), pA = Math.min(100, (after/max)*100);
+  return `<div class="sound-strip">
+    <div class="sound-track"><div class="sound-fill" style="left:${Math.min(pB,pA)}%; width:${Math.abs(pA-pB)}%"></div></div>
+    <div class="sound-labels"><span>${before}mm</span><span>→ ${after}mm</span></div>
+  </div>`;
+}
+
+/* ---------------- Validation engine ---------------- */
+function computeValidation(){
+  const completedLoads = DB.loading.filter(l=>l.status==='Completed');
+  return completedLoads.map(l=>{
+    const rc = DB.receiving.find(r=>r.loadingId===l.id);
+    const approval = DB.validationApprovals[l.id];
+    if(!rc){
+      return {loadingId:l.id, receivingId:null, load:l, rc:null, volLoad:l.volFlow, volRecv:null, varianceKl:null, variancePct:null, sealMatch:null, status:'Pending', approval};
+    }
+    const sealMatch = rc.seal === l.seal;
+    const varianceKl = +(rc.volFlow - l.volFlow).toFixed(2);
+    const variancePct = +((varianceKl/l.volFlow)*100).toFixed(2);
+    let status = 'Matched';
+    if(!sealMatch) status='Discrepancy';
+    else if(Math.abs(variancePct) > 0.5) status='Discrepancy';
+    return {loadingId:l.id, receivingId:rc.id, load:l, rc, volLoad:l.volFlow, volRecv:rc.volFlow, varianceKl, variancePct, sealMatch, status, approval};
+  });
+}
+
+/* ---------------- Sidebar & Topbar ---------------- */
+function renderSidebar(){
+  const role = currentRole();
+  const groups = NAV_GROUPS.map(g=>{
+    const items = g.items.filter(it=>role.modules.includes(it.key));
+    if(!items.length) return '';
+    return `<div class="nav-group">
+      <div class="nav-group-label">${esc(g.label)}</div>
+      ${items.map(it=>`<a href="#" class="nav-item ${state.module===it.key?'active':''}" data-nav="${it.key}">${icon(it.icon)}<span>${esc(it.label)}</span></a>`).join('')}
+    </div>`;
+  }).join('');
+
+  const roleOptions = Object.keys(ROLE_CONFIG).map(k=>`<option value="${k}" ${state.role===k?'selected':''}>${esc(ROLE_CONFIG[k].label)}</option>`).join('');
+  const user = currentUser();
+  const dept = deptById(user.dept);
+  const bu = user.bu ? buById(user.bu).name : 'Seluruh Business Unit';
+  const scopeLabelMap = {own:'Data Milik Sendiri', department:'Lingkup Departemen', business_unit:'Lingkup Business Unit', cross_validation:'Cross-Divisi (Validasi)', all:'Seluruh Organisasi'};
+
+  document.getElementById('sidebar').innerHTML = `
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-badge">PT</div>
+        <div class="brand-text">
+          <div class="brand-title">Custody Ledger</div>
+          <div class="brand-sub">PEC-Tech Service Indonesia</div>
+        </div>
+      </div>
+    </div>
+    <nav class="nav">${groups}</nav>
+    <div class="sidebar-foot">
+      <div class="role-switch">
+        <label>Masuk sebagai (simulasi)</label>
+        <select id="roleSelect">${roleOptions}</select>
+        <div class="role-meta">
+          <div><b>${esc(user.name)}</b></div>
+          <div>${esc(dept.name)} · ${esc(bu)}</div>
+          <span class="scope-pill">${esc(scopeLabelMap[role.scope])}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('roleSelect').addEventListener('change', e=>{
+    state.role = e.target.value;
+    if(!hasAccess(state.module)) state.module='dashboard';
+    renderSidebar(); renderTopbar(); renderMain();
+    document.getElementById('sidebar').classList.remove('open');
+  });
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    el.addEventListener('click', e=>{
+      e.preventDefault();
+      state.module = el.getAttribute('data-nav');
+      renderSidebar(); renderTopbar(); renderMain();
+      document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+}
+
+function renderTopbar(){
+  const moduleLabel = [...NAV_GROUPS.flatMap(g=>g.items)].find(i=>i.key===state.module)?.label || 'Dashboard';
+  const user = currentUser();
+  const initials = user.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('topbar').innerHTML = `
+    <div style="display:flex;align-items:center;">
+      <button id="menuToggle">${icon('menu',18)}</button>
+      <div class="crumb">Custody Ledger <span>›</span> <b>${esc(moduleLabel)}</b></div>
+    </div>
+    <div class="topbar-right">
+      <div class="clock">${fmtDate(new Date().toISOString())}</div>
+      <div class="user-chip">
+        <div class="user-avatar">${esc(initials)}</div>
+        <div>
+          <div class="user-chip-name">${esc(user.name)}</div>
+          <div class="user-chip-role">${esc(ROLE_CONFIG[user.role].label)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('menuToggle').addEventListener('click',()=>{
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+}
+
+/* ---------------- Modal ---------------- */
+function openModal(title, bodyHtml, onSubmit){
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="overlay" id="overlay">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">${esc(title)}</div>
+          <button class="modal-close" id="modalClose">${icon('x',18)}</button>
+        </div>
+        <form id="modalForm">
+          <div class="modal-body">${bodyHtml}</div>
+          <div class="modal-foot">
+            <button type="button" class="btn btn-ghost" id="modalCancel">Batal</button>
+            <button type="submit" class="btn btn-primary">${icon('check',15)} Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  const close = ()=>{ document.getElementById('modalRoot').innerHTML=''; };
+  document.getElementById('modalClose').addEventListener('click', close);
+  document.getElementById('modalCancel').addEventListener('click', close);
+  document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') close(); });
+  document.getElementById('modalForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const data = Object.fromEntries(fd.entries());
+    onSubmit(data);
+    close();
+  });
+}
+
+/* ---------------- Filter bar ---------------- */
+function filterBar(moduleKey, fields, onChange){
+  const f = state.filters[moduleKey] || (state.filters[moduleKey]={});
+  const html = `<div class="filter-bar">
+    ${fields.map(fl=>{
+      if(fl.type==='search'){
+        return `<div class="filter-field grow"><label>${esc(fl.label)}</label><input type="text" data-f="${fl.key}" value="${esc(f[fl.key]||'')}" placeholder="${esc(fl.placeholder||'Cari...')}"></div>`;
+      }
+      if(fl.type==='date'){
+        return `<div class="filter-field"><label>${esc(fl.label)}</label><input type="date" data-f="${fl.key}" value="${esc(f[fl.key]||'')}"></div>`;
+      }
+      if(fl.type==='select'){
+        return `<div class="filter-field"><label>${esc(fl.label)}</label><select data-f="${fl.key}">
+          <option value="">Semua</option>
+          ${fl.options.map(o=>`<option value="${esc(o)}" ${f[fl.key]===o?'selected':''}>${esc(o)}</option>`).join('')}
+        </select></div>`;
+      }
+      return '';
+    }).join('')}
+    <button class="btn btn-sm btn-ghost" id="filterReset">${icon('filter',14)} Reset</button>
+  </div>`;
+  setTimeout(()=>{
+    document.querySelectorAll('[data-f]').forEach(el=>{
+      el.addEventListener('input', ()=>{ f[el.getAttribute('data-f')] = el.value; onChange(); });
+      el.addEventListener('change', ()=>{ f[el.getAttribute('data-f')] = el.value; onChange(); });
+    });
+    const rb = document.getElementById('filterReset');
+    if(rb) rb.addEventListener('click', ()=>{ state.filters[moduleKey]={}; onChange(); });
+  },0);
+  return html;
+}
+function applyDateFilter(list, f, dateField){
+  return list.filter(r=>{
+    const val = r[dateField]; if(!val) return true;
+    const day = val.slice(0,10);
+    if(f.from && day < f.from) return false;
+    if(f.to && day > f.to) return false;
+    return true;
+  });
+}
+function applySearch(list, f, fields){
+  if(!f.q) return list;
+  const q = f.q.toLowerCase();
+  return list.filter(r=>fields.some(fn=>String(fn(r)||'').toLowerCase().includes(q)));
+}
+
+/* ---------------- Dashboard ---------------- */
+function renderDashboard(){
+  const todayStr = '2026-07-17';
+  const loadToday = filterByScope(DB.loading).filter(l=>l.dtStart.slice(0,10)===todayStr).length;
+  const recvToday = filterByScope(DB.receiving).filter(r=>r.dt.slice(0,10)===todayStr).length;
+  const thisMonth = '2026-07';
+  const rejects = filterByScope(DB.inspectionPre).filter(r=>r.result==='Reject' && r.dt.slice(0,7)===thisMonth).length
+                + filterByScope(DB.inspectionAfter).filter(r=>r.result==='Reject' && (r.dt||'').slice(0,7)===thisMonth).length;
+  const valAll = computeValidation();
+  const discrepancy = valAll.filter(v=>v.status==='Discrepancy').length;
+
+  const kpis = [
+    {label:'Loading Hari Ini', value:loadToday, sub:'17 Jul 2026', color:'var(--amber)'},
+    {label:'Receiving Hari Ini', value:recvToday, sub:'17 Jul 2026', color:'var(--teal)'},
+    {label:'Inspeksi Reject', value:rejects, sub:'Bulan berjalan', color:'var(--red)'},
+    {label:'Validasi Discrepancy', value:discrepancy, sub:'Perlu tindak lanjut', color:'var(--blue)'},
+  ];
+
+  // Recent activity merge
+  const acts = [];
+  DB.inspectionPre.forEach(r=>acts.push({dt:r.dt, text:`Inspeksi pre-loading unit <b>${unitById(r.unit).plate}</b>`, status:r.result}));
+  DB.loading.forEach(r=>acts.push({dt:r.dtStart, text:`Loading <b>${r.id}</b> — ${unitById(r.unit).plate}`, status:r.status}));
+  DB.receiving.forEach(r=>acts.push({dt:r.dt, text:`Receiving <b>${r.id}</b> ref. ${r.loadingId}`, status:'Completed'}));
+  DB.discharge.forEach(r=>acts.push({dt:r.dtStart, text:`Discharge <b>${r.id}</b> — ${vesselById(r.vessel).name}`, status:r.status}));
+  DB.shipLoading.forEach(r=>acts.push({dt:r.dtStart, text:`Loading kapal <b>${r.id}</b> — ${vesselById(r.vessel).name}`, status:r.status}));
+  acts.sort((a,b)=> new Date(b.dt) - new Date(a.dt));
+  const dotColor = s=> s==='Reject'?'var(--red)': s==='Draft'||s==='In Progress'?'var(--amber)':'var(--green)';
+
+  // Follow-ups
+  const followups = [];
+  DB.inspectionPre.filter(r=>r.result==='Reject').forEach(r=>followups.push({title:`Unit ${unitById(r.unit).plate} — inspeksi pre-loading ditolak`, meta:`${r.reason} · ${fmtDate(r.dt)}`}));
+  DB.inspectionAfter.filter(r=>r.result==='Reject').forEach(r=>followups.push({title:`Loading ${r.loadingId} — inspeksi after-loading ditolak`, meta:`${r.remarks} · ${fmtDate(r.dt)}`}));
+  valAll.filter(v=>v.status==='Discrepancy').forEach(v=>followups.push({title:`Discrepancy volume — ${v.loadingId} vs ${v.receivingId}`, meta: v.sealMatch===false ? 'Nomor seal tidak cocok' : `Selisih volume ${fmtNum(v.variancePct,2)}%`}));
+
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div>
+        <div class="page-title">Dashboard Operasi</div>
+        <div class="page-desc">Ringkasan lintas divisi — data ditampilkan sesuai lingkup akses peran Anda saat ini.</div>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      ${kpis.map(k=>`<div class="kpi-card"><div class="kpi-label">${esc(k.label)}</div><div class="kpi-value">${k.value}</div><div class="kpi-sub">${esc(k.sub)}</div><div class="kpi-accent" style="background:${k.color}"></div></div>`).join('')}
+    </div>
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Aktivitas Terbaru</div></div>
+        <div class="panel-body">
+          ${acts.slice(0,8).map(a=>`<div class="activity-row"><div class="activity-dot" style="background:${dotColor(a.status)}"></div><div><div class="activity-text">${a.text}</div><div class="activity-time">${fmtDate(a.dt)}</div></div></div>`).join('') || '<div class="empty-note">Belum ada aktivitas.</div>'}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Perlu Tindak Lanjut</div></div>
+        <div class="panel-body">
+          ${followups.slice(0,8).map(f=>`<div class="followup-row"><div class="ff-title">${esc(f.title)}</div><div class="ff-meta">${esc(f.meta)}</div></div>`).join('') || '<div class="empty-note">Tidak ada item terbuka. Semua beres.</div>'}
+        </div>
+      </div>
+    </div>
+    <div class="note-foot">
+      <span>Lingkup data: <b>${esc(ROLE_CONFIG[state.role].label)}</b> · ${esc({own:'hanya data sendiri',department:'satu departemen',business_unit:'satu business unit',cross_validation:'cross-divisi (pasangan transaksi)',all:'seluruh organisasi'}[currentRole().scope])}</span>
+      <span>Data demo tersimpan sementara di sesi ini — reload halaman akan mengembalikan ke data awal.</span>
+    </div>
+  `;
+}
+
+/* ---------------- Inspection Pre-Loading ---------------- */
+function renderInspectionPre(){
+  const f = state.filters.inspection_pre || (state.filters.inspection_pre={});
+  let rows = filterByScope(DB.inspectionPre);
+  rows = applyDateFilter(rows, f, 'dt');
+  if(f.result) rows = rows.filter(r=>r.result===f.result);
+  rows = applySearch(rows, f, [r=>unitById(r.unit).plate, r=>r.seal]);
+  rows.sort((a,b)=>new Date(b.dt)-new Date(a.dt));
+
+  const canCreate = currentRole().canCreate;
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">Inspeksi Unit — Sebelum Loading</div><div class="page-desc">Pemeriksaan kondisi unit dan seal awal sebelum proses loading dimulai.</div></div>
+      <div class="page-actions">
+        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
+        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Inspeksi Baru</button>`:''}
+      </div>
+    </div>
+    <div id="filterSlot"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Tanggal</th><th>Unit</th><th>Pemilik</th><th>Hasil</th><th class="wrap">Catatan</th><th>Seal Awal</th><th>Departemen</th></tr></thead>
+      <tbody>
+        ${rows.length ? rows.map(r=>{
+          const u = unitById(r.unit);
+          return `<tr>
+            <td class="mono">${r.id}</td>
+            <td>${fmtDate(r.dt)}</td>
+            <td>${esc(u.plate)}<div class="cell-sub">${esc(u.type)}</div></td>
+            <td>${esc(u.owner)}</td>
+            <td>${resultBadge(r.result)}</td>
+            <td class="wrap">${esc(r.reason)||'<span class="cell-sub">—</span>'}</td>
+            <td class="mono">${esc(r.seal)}</td>
+            <td>${esc(deptById(r.dept).name)}</td>
+          </tr>`;
+        }).join('') : `<tr class="empty-row"><td colspan="8">Tidak ada data yang cocok dengan filter.</td></tr>`}
+      </tbody>
+    </table></div>
+  `;
+  document.getElementById('filterSlot').innerHTML = filterBar('inspection_pre', [
+    {key:'q', type:'search', label:'Cari', placeholder:'Plat unit / no. seal'},
+    {key:'from', type:'date', label:'Dari Tanggal'},
+    {key:'to', type:'date', label:'Sampai Tanggal'},
+    {key:'result', type:'select', label:'Hasil', options:['Good','Reject']},
+  ], renderInspectionPre);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    downloadCSV('inspeksi-pre-loading.csv', rows, [
+      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dt},{label:'Unit', get:r=>unitById(r.unit).plate},
+      {label:'Hasil', get:r=>r.result},{label:'Catatan', get:r=>r.reason},{label:'Seal', get:r=>r.seal},
+    ]);
+  });
+  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formInspectionPre);
+}
+function formInspectionPre(){
+  const opts = UNITS.map(u=>`<option value="${u.id}">${esc(u.plate)} — ${esc(u.type)}</option>`).join('');
+  openModal('Inspeksi Pre-Loading Baru', `
+    <div class="form-grid">
+      <div class="form-field"><label>Unit</label><select name="unit" required>${opts}</select></div>
+      <div class="form-field"><label>Tanggal &amp; Waktu</label><input type="datetime-local" name="dt" required value="2026-07-17T09:00"></div>
+      <div class="form-field"><label>Hasil Inspeksi</label><select name="result" required><option value="Good">Good</option><option value="Reject">Reject</option></select></div>
+      <div class="form-field"><label>No. Seal Awal</label><input type="text" name="seal" placeholder="SL-P1xxxx" required></div>
+      <div class="form-field full"><label>Catatan / Alasan Reject</label><textarea name="reason" rows="2" placeholder="Isi jika hasil Reject"></textarea></div>
+    </div>
+  `, data=>{
+    const id = 'IP-'+String(state.idSeq.ip++).padStart(3,'0');
+    DB.inspectionPre.push({id, dt:data.dt, unit:data.unit, result:data.result, reason:data.reason||'', seal:data.seal, inspector:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
+    toast('Inspeksi pre-loading '+id+' tersimpan.');
+    renderInspectionPre();
+  });
+}
+
+/* ---------------- Inspection After-Loading ---------------- */
+function renderInspectionAfter(){
+  const f = state.filters.inspection_after || (state.filters.inspection_after={});
+  let rows = filterByScope(DB.inspectionAfter);
+  rows = applyDateFilter(rows, f, 'dt');
+  if(f.result) rows = rows.filter(r=>r.result===f.result);
+  rows = applySearch(rows, f, [r=>r.loadingId, r=>r.seal]);
+  rows.sort((a,b)=>new Date(b.dt)-new Date(a.dt));
+  const canCreate = currentRole().canCreate;
+
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">Inspeksi Unit — Setelah Loading</div><div class="page-desc">Verifikasi kondisi unit dan seal setelah proses loading selesai, sebelum unit berangkat.</div></div>
+      <div class="page-actions">
+        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
+        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Inspeksi Baru</button>`:''}
+      </div>
+    </div>
+    <div id="filterSlot"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Tanggal</th><th>Ref. Loading</th><th>Unit</th><th>Hasil</th><th class="wrap">Catatan</th><th>Seal Akhir</th></tr></thead>
+      <tbody>
+        ${rows.length? rows.map(r=>{
+          const ld = DB_LD(r.loadingId);
+          return `<tr>
+            <td class="mono">${r.id}</td><td>${fmtDate(r.dt)}</td>
+            <td class="mono">${r.loadingId}</td>
+            <td>${ld? esc(unitById(ld.unit).plate) : '—'}</td>
+            <td>${resultBadge(r.result)}</td>
+            <td class="wrap">${esc(r.remarks)||'<span class="cell-sub">—</span>'}</td>
+            <td class="mono">${esc(r.seal)}</td>
+          </tr>`;
+        }).join('') : `<tr class="empty-row"><td colspan="7">Tidak ada data yang cocok dengan filter.</td></tr>`}
+      </tbody>
+    </table></div>
+  `;
+  document.getElementById('filterSlot').innerHTML = filterBar('inspection_after', [
+    {key:'q', type:'search', label:'Cari', placeholder:'Ref. loading / seal'},
+    {key:'from', type:'date', label:'Dari Tanggal'},
+    {key:'to', type:'date', label:'Sampai Tanggal'},
+    {key:'result', type:'select', label:'Hasil', options:['Good','Reject']},
+  ], renderInspectionAfter);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    downloadCSV('inspeksi-after-loading.csv', rows, [
+      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dt},{label:'Ref Loading', get:r=>r.loadingId},
+      {label:'Hasil', get:r=>r.result},{label:'Catatan', get:r=>r.remarks},{label:'Seal', get:r=>r.seal},
+    ]);
+  });
+  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formInspectionAfter);
+}
+function formInspectionAfter(){
+  const opts = DB.loading.map(l=>`<option value="${l.id}">${l.id} — ${esc(unitById(l.unit).plate)}</option>`).join('');
+  openModal('Inspeksi After-Loading Baru', `
+    <div class="form-grid">
+      <div class="form-field full"><label>Ref. Loading</label><select name="loadingId" required>${opts}</select></div>
+      <div class="form-field"><label>Tanggal &amp; Waktu</label><input type="datetime-local" name="dt" required value="2026-07-17T09:30"></div>
+      <div class="form-field"><label>Hasil</label><select name="result" required><option value="Good">Good</option><option value="Reject">Reject</option></select></div>
+      <div class="form-field"><label>No. Seal Akhir</label><input type="text" name="seal" required placeholder="SL-4xxxx"></div>
+      <div class="form-field full"><label>Catatan</label><textarea name="remarks" rows="2"></textarea></div>
+    </div>
+  `, data=>{
+    const id = 'IA-'+String(state.idSeq.ia++).padStart(3,'0');
+    DB.inspectionAfter.push({id, loadingId:data.loadingId, dt:data.dt, result:data.result, seal:data.seal, remarks:data.remarks||'', inspector:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
+    toast('Inspeksi after-loading '+id+' tersimpan.');
+    renderInspectionAfter();
+  });
+}
+
+/* ---------------- Loading ---------------- */
+function renderLoading(){
+  const f = state.filters.loading || (state.filters.loading={});
+  let rows = filterByScope(DB.loading);
+  rows = applyDateFilter(rows, f, 'dtStart');
+  if(f.status) rows = rows.filter(r=>r.status===f.status);
+  rows = applySearch(rows, f, [r=>unitById(r.unit).plate, r=>r.seal]);
+  rows.sort((a,b)=>new Date(b.dtStart)-new Date(a.dtStart));
+  const canCreate = currentRole().canCreate;
+
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">Loading — Tangki Darat ke Unit</div><div class="page-desc">Pencatatan sounding, flowmeter, dan seal saat pengisian unit dari tangki terminal.</div></div>
+      <div class="page-actions">
+        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
+        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Loading Baru</button>`:''}
+      </div>
+    </div>
+    <div id="filterSlot"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Tanggal</th><th>Unit</th><th>Tangki Sumber</th><th>Sounding</th><th>Vol. Sounding</th><th>Vol. Flowmeter</th><th>Seal</th><th>Tujuan</th><th>Status</th></tr></thead>
+      <tbody>
+        ${rows.length? rows.map(r=>{
+          const tank = tankById(r.tank);
+          return `<tr>
+            <td class="mono">${r.id}</td><td>${fmtDate(r.dtStart)}</td>
+            <td>${esc(unitById(r.unit).plate)}</td>
+            <td>${esc(tank.name)}<div class="cell-sub">${esc(productById(tank.product).name)}</div></td>
+            <td>${soundStrip(r.sBefore, r.sAfter)}</td>
+            <td class="mono">${fmtNum(r.volSound)} KL</td>
+            <td class="mono">${fmtNum(r.volFlow)} KL</td>
+            <td class="mono">${esc(r.seal)}</td>
+            <td>${esc(r.dest)}</td>
+            <td>${statusBadge(r.status)}</td>
+          </tr>`;
+        }).join('') : `<tr class="empty-row"><td colspan="10">Tidak ada data yang cocok dengan filter.</td></tr>`}
+      </tbody>
+    </table></div>
+  `;
+  document.getElementById('filterSlot').innerHTML = filterBar('loading', [
+    {key:'q', type:'search', label:'Cari', placeholder:'Plat unit / no. seal'},
+    {key:'from', type:'date', label:'Dari Tanggal'},
+    {key:'to', type:'date', label:'Sampai Tanggal'},
+    {key:'status', type:'select', label:'Status', options:['Draft','Completed']},
+  ], renderLoading);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    downloadCSV('loading.csv', rows, [
+      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dtStart},{label:'Unit', get:r=>unitById(r.unit).plate},
+      {label:'Tangki', get:r=>tankById(r.tank).name},{label:'Vol Sounding', get:r=>r.volSound},{label:'Vol Flowmeter', get:r=>r.volFlow},
+      {label:'Seal', get:r=>r.seal},{label:'Status', get:r=>r.status},
+    ]);
+  });
+  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formLoading);
+}
+function formLoading(){
+  const uOpts = UNITS.map(u=>`<option value="${u.id}">${esc(u.plate)}</option>`).join('');
+  const tOpts = TANKS.filter(t=>t.location==='Terminal Balikpapan').map(t=>`<option value="${t.id}" data-factor="0.42">${esc(t.name)} — ${esc(productById(t.product).name)}</option>`).join('');
+  openModal('Loading Baru', `
+    <div class="form-grid">
+      <div class="form-field"><label>Unit</label><select name="unit" required>${uOpts}</select></div>
+      <div class="form-field"><label>Tangki Sumber</label><select name="tank" id="ldTank" required>${tOpts}</select></div>
+      <div class="form-field"><label>Sounding Sebelum (mm)</label><input type="number" name="sBefore" id="ldBefore" required value="1500"></div>
+      <div class="form-field"><label>Sounding Sesudah (mm)</label><input type="number" name="sAfter" id="ldAfter" required value="1540"></div>
+      <div class="form-field"><label>Flowmeter Start (L)</label><input type="number" name="fmStart" required value="500000"></div>
+      <div class="form-field"><label>Flowmeter End (L)</label><input type="number" name="fmEnd" id="ldFmEnd" required value="516000"></div>
+      <div class="form-field"><label>No. Seal</label><input type="text" name="seal" required placeholder="SL-4xxxx"></div>
+      <div class="form-field"><label>Tujuan</label><input type="text" name="dest" required value="Depot Samarinda"></div>
+      <div class="form-field"><label>Mulai</label><input type="datetime-local" name="dtStart" required value="2026-07-17T10:00"></div>
+      <div class="form-field"><label>Selesai</label><input type="datetime-local" name="dtEnd" required value="2026-07-17T10:35"></div>
+      <div class="form-field"><label>Status</label><select name="status" required><option value="Completed">Completed</option><option value="Draft">Draft</option></select></div>
+      <div class="form-field full"><div class="calc" id="ldCalc">Vol. sounding (estimasi): —</div></div>
+    </div>
+  `, data=>{
+    const factor = 0.42;
+    const volSound = +(( +data.sAfter - +data.sBefore) * factor).toFixed(2);
+    const volFlow = +(((+data.fmEnd) - (+data.fmStart))/1000).toFixed(2);
+    const id = 'LD-'+String(state.idSeq.ld++).padStart(3,'0');
+    DB.loading.push({id, unit:data.unit, tank:data.tank, dtStart:data.dtStart, dtEnd:data.dtEnd, dest:data.dest,
+      sBefore:+data.sBefore, sAfter:+data.sAfter, volSound, volFlow, fmStart:+data.fmStart, fmEnd:+data.fmEnd,
+      seal:data.seal, status:data.status, operator:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
+    toast('Loading '+id+' tersimpan.');
+    renderLoading();
+  });
+  setTimeout(()=>{
+    const calc = document.getElementById('ldCalc');
+    const update = ()=>{
+      const b = +document.getElementById('ldBefore').value, a = +document.getElementById('ldAfter').value;
+      calc.textContent = 'Vol. sounding (estimasi): ' + fmtNum((a-b)*0.42) + ' KL';
+    };
+    document.getElementById('ldBefore').addEventListener('input', update);
+    document.getElementById('ldAfter').addEventListener('input', update);
+    update();
+  },0);
+}
+
+/* ---------------- Receiving ---------------- */
+function renderReceiving(){
+  const f = state.filters.receiving || (state.filters.receiving={});
+  let rows = filterByScope(DB.receiving);
+  rows = applyDateFilter(rows, f, 'dt');
+  rows = applySearch(rows, f, [r=>r.loadingId, r=>r.seal]);
+  rows.sort((a,b)=>new Date(b.dt)-new Date(a.dt));
+  const canCreate = currentRole().canCreate;
+
+  document.getElementById('main').innerHTML = `
+    <div class="info-strip">${icon('scale',16)}<div>Data loading asal (tangki sumber, seal, volume kirim) otomatis ditampilkan sebagai referensi pencocokan — tanpa membuka akses penuh ke seluruh data divisi Terminal Ops.</div></div>
+    <div class="page-head">
+      <div><div class="page-title">Receiving</div><div class="page-desc">Data hasil penerimaan di site tujuan, dicocokkan otomatis dengan data loading terkait.</div></div>
+      <div class="page-actions">
+        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
+        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Receiving Baru</button>`:''}
+      </div>
+    </div>
+    <div id="filterSlot"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Tanggal</th><th>Ref. Loading</th><th>Tangki Tujuan</th><th>Sounding</th><th>Vol. Diterima</th><th>Vol. Dikirim (ref)</th><th>Seal Diterima</th><th>Kecocokan Seal</th></tr></thead>
+      <tbody>
+        ${rows.length? rows.map(r=>{
+          const ld = DB_LD(r.loadingId);
+          return `<tr>
+            <td class="mono">${r.id}</td><td>${fmtDate(r.dt)}</td>
+            <td class="mono">${r.loadingId}</td>
+            <td>${esc(tankById(r.tank).name)}</td>
+            <td>${soundStrip(r.sBefore, r.sAfter)}</td>
+            <td class="mono">${fmtNum(r.volFlow)} KL</td>
+            <td class="mono">${ld? fmtNum(ld.volFlow)+' KL' : '—'}</td>
+            <td class="mono">${esc(r.seal)}</td>
+            <td>${sealChip(ld ? r.seal===ld.seal : false)}</td>
+          </tr>`;
+        }).join('') : `<tr class="empty-row"><td colspan="9">Tidak ada data yang cocok dengan filter.</td></tr>`}
+      </tbody>
+    </table></div>
+  `;
+  document.getElementById('filterSlot').innerHTML = filterBar('receiving', [
+    {key:'q', type:'search', label:'Cari', placeholder:'Ref. loading / seal'},
+    {key:'from', type:'date', label:'Dari Tanggal'},
+    {key:'to', type:'date', label:'Sampai Tanggal'},
+  ], renderReceiving);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    downloadCSV('receiving.csv', rows, [
+      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dt},{label:'Ref Loading', get:r=>r.loadingId},
+      {label:'Vol Diterima', get:r=>r.volFlow},{label:'Seal', get:r=>r.seal},
+    ]);
+  });
+  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formReceiving);
+}
+function formReceiving(){
+  const completed = DB.loading.filter(l=>l.status==='Completed' && !DB.receiving.some(r=>r.loadingId===l.id));
+  const opts = completed.map(l=>`<option value="${l.id}">${l.id} — ${esc(unitById(l.unit).plate)} — ${fmtNum(l.volFlow)} KL</option>`).join('') || '<option value="">Tidak ada loading yang menunggu receiving</option>';
+  const tOpts = TANKS.filter(t=>t.location==='Depot Samarinda').map(t=>`<option value="${t.id}">${esc(t.name)} — ${esc(productById(t.product).name)}</option>`).join('');
+  openModal('Receiving Baru', `
+    <div class="form-grid">
+      <div class="form-field full"><label>Ref. Loading</label><select name="loadingId" required>${opts}</select></div>
+      <div class="form-field"><label>Tangki Tujuan</label><select name="tank" required>${tOpts}</select></div>
+      <div class="form-field"><label>Tanggal &amp; Waktu</label><input type="datetime-local" name="dt" required value="2026-07-17T15:00"></div>
+      <div class="form-field"><label>Sounding Sebelum (mm)</label><input type="number" name="sBefore" required value="1000"></div>
+      <div class="form-field"><label>Sounding Sesudah (mm)</label><input type="number" name="sAfter" required value="1040"></div>
+      <div class="form-field"><label>Flowmeter Diterima (KL)</label><input type="number" step="0.01" name="volFlow" required></div>
+      <div class="form-field"><label>No. Seal Diterima</label><input type="text" name="seal" required placeholder="Cocokkan dengan seal loading"></div>
+    </div>
+  `, data=>{
+    if(!data.loadingId){ toast('Tidak ada loading yang bisa direceiving.'); return; }
+    const volSound = +((+data.sAfter - +data.sBefore) * 0.35).toFixed(2);
+    const id = 'RC-'+String(state.idSeq.rc++).padStart(3,'0');
+    DB.receiving.push({id, loadingId:data.loadingId, tank:data.tank, dt:data.dt, sBefore:+data.sBefore, sAfter:+data.sAfter,
+      volSound, volFlow:+data.volFlow, seal:data.seal, receiver:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
+    toast('Receiving '+id+' tersimpan — cek halaman Validasi Volume.');
+    renderReceiving();
+  });
+}
+
+/* ---------------- Validation ---------------- */
+function renderValidation(){
+  const f = state.filters.validation || (state.filters.validation={});
+  let rows = computeValidation();
+  rows = rows.filter(v=>{
+    const user = currentUser(), role = currentRole();
+    if(role.scope==='all') return true;
+    if(role.scope==='business_unit') return v.load.bu===user.bu;
+    if(role.scope==='department') return v.load.dept===user.dept || (v.rc && v.rc.dept===user.dept);
+    return true;
+  });
+  if(f.status) rows = rows.filter(r=>r.status===f.status);
+  rows = applySearch(rows, f, [r=>r.loadingId, r=>r.receivingId]);
+  rows.sort((a,b)=>new Date(b.load.dtStart)-new Date(a.load.dtStart));
+  const canApprove = currentRole().canApprove;
+
+  document.getElementById('main').innerHTML = `
+    <div class="info-strip">${icon('scale',16)}<div>Perbandingan dihitung otomatis dari pasangan transaksi Loading ↔ Receiving. Toleransi selisih volume: <b>±0,5%</b>; seal harus cocok persis.</div></div>
+    <div class="page-head">
+      <div><div class="page-title">Validasi Volume Loading vs Receiving</div><div class="page-desc">Pencocokan seal, sounding, dan volume flowmeter lintas divisi.</div></div>
+      <div class="page-actions"><button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button></div>
+    </div>
+    <div id="filterSlot"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Loading</th><th>Receiving</th><th>Vol. Loading</th><th>Vol. Receiving</th><th>Selisih</th><th>Seal</th><th>Status</th><th>Validator</th>${canApprove?'<th>Aksi</th>':''}</tr></thead>
+      <tbody>
+        ${rows.length? rows.map(v=>`<tr>
+            <td class="mono">${v.loadingId}</td>
+            <td class="mono">${v.receivingId||'<span class="cell-sub">menunggu</span>'}</td>
+            <td class="mono">${fmtNum(v.volLoad)} KL</td>
+            <td class="mono">${v.volRecv!=null? fmtNum(v.volRecv)+' KL':'—'}</td>
+            <td class="mono" style="color:${v.variancePct==null?'inherit':(Math.abs(v.variancePct)>0.5?'var(--red)':'var(--green)')}">${v.variancePct!=null? (v.variancePct>0?'+':'')+fmtNum(v.variancePct,2)+'%':'—'}</td>
+            <td>${v.sealMatch==null? '<span class="cell-sub">—</span>' : sealChip(v.sealMatch)}</td>
+            <td>${statusBadge(v.status)}</td>
+            <td>${v.approval? esc(findUser(v.approval.by).name)+`<div class="cell-sub">${fmtDate(v.approval.at)}</div>` : '<span class="cell-sub">Belum divalidasi</span>'}</td>
+            ${canApprove? `<td>${v.status!=='Pending' && !v.approval ? `<button class="btn btn-sm" data-approve="${v.loadingId}">${icon('check',13)} Approve</button>` : ''}</td>`:''}
+          </tr>`).join('') : `<tr class="empty-row"><td colspan="9">Tidak ada data yang cocok dengan filter.</td></tr>`}
+      </tbody>
+    </table></div>
+  `;
+  document.getElementById('filterSlot').innerHTML = filterBar('validation', [
+    {key:'q', type:'search', label:'Cari', placeholder:'ID loading / receiving'},
+    {key:'status', type:'select', label:'Status', options:['Matched','Discrepancy','Pending']},
+  ], renderValidation);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    downloadCSV('validasi-volume.csv', rows, [
+      {label:'Loading', get:r=>r.loadingId},{label:'Receiving', get:r=>r.receivingId},
+      {label:'Vol Loading', get:r=>r.volLoad},{label:'Vol Receiving', get:r=>r.volRecv},
+      {label:'Selisih %', get:r=>r.variancePct},{label:'Seal Cocok', get:r=>r.sealMatch},{label:'Status', get:r=>r.status},
+    ]);
+  });
+  if(canApprove){
+    document.querySelectorAll('[data-approve]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const lid = btn.getAttribute('data-approve');
+        DB.validationApprovals[lid] = {by:currentUser().email, at:'2026-07-17T'+String(9+Math.floor(Math.random()*3)).padStart(2,'0')+':15', remarks:''};
+        toast('Validasi '+lid+' disetujui.');
+        renderValidation();
+      });
+    });
+  }
+}
+
+/* ---------------- Discharge Cargo ---------------- */
+function renderDischarge(){
+  const f = state.filters.discharge || (state.filters.discharge={});
+  let rows = filterByScope(DB.discharge);
+  rows = applyDateFilter(rows, f, 'dtStart');
+  if(f.status) rows = rows.filter(r=>r.status===f.status);
+  rows.sort((a,b)=>new Date(b.dtStart)-new Date(a.dtStart));
+  const canCreate = currentRole().canCreate;
+
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">Discharge Cargo — Vessel ke Tangki Darat</div><div class="page-desc">Pembongkaran muatan dari kapal ke tangki timbun terminal.</div></div>
+      <div class="page-actions">
+        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
+        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Discharge Baru</button>`:''}
+      </div>
+    </div>
+    <div id="filterSlot"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Tanggal</th><th>Vessel</th><th>Tangki Tujuan</th><th>Vol. Vessel</th><th>Vol. Tangki</th><th>Selisih</th><th>Seal</th><th>Surveyor</th><th>Status</th></tr></thead>
+      <tbody>
+        ${rows.length? rows.map(r=>{
+          const diffPct = +(((r.volTank-r.volVessel)/r.volVessel)*100).toFixed(2);
+          return `<tr>
+            <td class="mono">${r.id}</td><td>${fmtDate(r.dtStart)}</td>
+            <td>${esc(vesselById(r.vessel).name)}</td>
+            <td>${esc(tankById(r.tank).name)}</td>
+            <td class="mono">${fmtNum(r.volVessel)} KL</td>
+            <td class="mono">${fmtNum(r.volTank)} KL</td>
+            <td class="mono" style="color:${Math.abs(diffPct)>0.5?'var(--red)':'var(--green)'}">${diffPct>0?'+':''}${fmtNum(diffPct,2)}%</td>
+            <td class="mono">${esc(r.seal)}</td>
+            <td>${esc(findUser(r.surveyor).name)}</td>
+            <td>${statusBadge(r.status)}</td>
+          </tr>`;
+        }).join('') : `<tr class="empty-row"><td colspan="10">Tidak ada data yang cocok dengan filter.</td></tr>`}
+      </tbody>
+    </table></div>
+  `;
+  document.getElementById('filterSlot').innerHTML = filterBar('discharge', [
+    {key:'from', type:'date', label:'Dari Tanggal'},
+    {key:'to', type:'date', label:'Sampai Tanggal'},
+    {key:'status', type:'select', label:'Status', options:['Completed','In Progress']},
+  ], renderDischarge);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    downloadCSV('discharge-cargo.csv', rows, [
+      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dtStart},{label:'Vessel', get:r=>vesselById(r.vessel).name},
+      {label:'Tangki', get:r=>tankById(r.tank).name},{label:'Vol Vessel', get:r=>r.volVessel},{label:'Vol Tangki', get:r=>r.volTank},{label:'Status', get:r=>r.status},
+    ]);
+  });
+  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formDischarge);
+}
+function formDischarge(){
+  const vOpts = VESSELS.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
+  const tOpts = TANKS.filter(t=>t.location==='Terminal Balikpapan').map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  openModal('Discharge Cargo Baru', `
+    <div class="form-grid">
+      <div class="form-field"><label>Vessel</label><select name="vessel" required>${vOpts}</select></div>
+      <div class="form-field"><label>Tangki Tujuan</label><select name="tank" required>${tOpts}</select></div>
+      <div class="form-field"><label>Sounding Vessel Sebelum (mm)</label><input type="number" name="vBefore" required value="8000"></div>
+      <div class="form-field"><label>Sounding Vessel Sesudah (mm)</label><input type="number" name="vAfter" required value="3000"></div>
+      <div class="form-field"><label>Sounding Tangki Sebelum (mm)</label><input type="number" name="tBefore" required value="1200"></div>
+      <div class="form-field"><label>Sounding Tangki Sesudah (mm)</label><input type="number" name="tAfter" required value="2900"></div>
+      <div class="form-field"><label>Vol. Vessel (KL)</label><input type="number" step="0.01" name="volVessel" required></div>
+      <div class="form-field"><label>Vol. Tangki (KL)</label><input type="number" step="0.01" name="volTank" required></div>
+      <div class="form-field"><label>No. Seal</label><input type="text" name="seal" required placeholder="SD-2xxxx"></div>
+      <div class="form-field"><label>Status</label><select name="status" required><option value="Completed">Completed</option><option value="In Progress">In Progress</option></select></div>
+      <div class="form-field"><label>Mulai</label><input type="datetime-local" name="dtStart" required value="2026-07-17T06:00"></div>
+      <div class="form-field"><label>Selesai</label><input type="datetime-local" name="dtEnd" value="2026-07-17T14:00"></div>
+    </div>
+  `, data=>{
+    const id = 'DC-'+String(state.idSeq.dc++).padStart(3,'0');
+    DB.discharge.push({id, vessel:data.vessel, tank:data.tank, dtStart:data.dtStart, dtEnd:data.dtEnd||null,
+      vBefore:+data.vBefore, vAfter:+data.vAfter, tBefore:+data.tBefore, tAfter:+data.tAfter,
+      volVessel:+data.volVessel, volTank:+data.volTank, seal:data.seal, status:data.status,
+      surveyor:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
+    toast('Discharge '+id+' tersimpan.');
+    renderDischarge();
+  });
+}
+
+/* ---------------- Ship Loading ---------------- */
+function renderShipLoading(){
+  const f = state.filters.ship_loading || (state.filters.ship_loading={});
+  let rows = filterByScope(DB.shipLoading);
+  rows = applyDateFilter(rows, f, 'dtStart');
+  if(f.status) rows = rows.filter(r=>r.status===f.status);
+  rows.sort((a,b)=>new Date(b.dtStart)-new Date(a.dtStart));
+  const canCreate = currentRole().canCreate;
+
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">Loading ke Kapal — Tangki Darat ke Vessel</div><div class="page-desc">Pemuatan produk dari tangki timbun terminal ke kapal.</div></div>
+      <div class="page-actions">
+        <button class="btn btn-sm" id="btnExport">${icon('download',14)} Export CSV</button>
+        ${canCreate?`<button class="btn btn-primary btn-sm" id="btnAdd">${icon('plus',14)} Loading Kapal Baru</button>`:''}
+      </div>
+    </div>
+    <div id="filterSlot"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ID</th><th>Tanggal</th><th>Tangki Sumber</th><th>Vessel</th><th>Vol. Tangki</th><th>Vol. Vessel</th><th>Seal</th><th>Surveyor</th><th>Status</th></tr></thead>
+      <tbody>
+        ${rows.length? rows.map(r=>`<tr>
+            <td class="mono">${r.id}</td><td>${fmtDate(r.dtStart)}</td>
+            <td>${esc(tankById(r.tank).name)}</td>
+            <td>${esc(vesselById(r.vessel).name)}</td>
+            <td class="mono">${fmtNum(r.volTank)} KL</td>
+            <td class="mono">${r.volVessel!=null? fmtNum(r.volVessel)+' KL':'<span class="cell-sub">berlangsung</span>'}</td>
+            <td class="mono">${esc(r.seal)}</td>
+            <td>${esc(findUser(r.surveyor).name)}</td>
+            <td>${statusBadge(r.status)}</td>
+          </tr>`).join('') : `<tr class="empty-row"><td colspan="9">Tidak ada data yang cocok dengan filter.</td></tr>`}
+      </tbody>
+    </table></div>
+  `;
+  document.getElementById('filterSlot').innerHTML = filterBar('ship_loading', [
+    {key:'from', type:'date', label:'Dari Tanggal'},
+    {key:'to', type:'date', label:'Sampai Tanggal'},
+    {key:'status', type:'select', label:'Status', options:['Completed','In Progress']},
+  ], renderShipLoading);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    downloadCSV('loading-kapal.csv', rows, [
+      {label:'ID', get:r=>r.id},{label:'Tanggal', get:r=>r.dtStart},{label:'Tangki', get:r=>tankById(r.tank).name},
+      {label:'Vessel', get:r=>vesselById(r.vessel).name},{label:'Vol Tangki', get:r=>r.volTank},{label:'Vol Vessel', get:r=>r.volVessel},{label:'Status', get:r=>r.status},
+    ]);
+  });
+  if(canCreate) document.getElementById('btnAdd').addEventListener('click', formShipLoading);
+}
+function formShipLoading(){
+  const tOpts = TANKS.filter(t=>t.location==='Terminal Balikpapan').map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  const vOpts = VESSELS.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
+  openModal('Loading ke Kapal Baru', `
+    <div class="form-grid">
+      <div class="form-field"><label>Tangki Sumber</label><select name="tank" required>${tOpts}</select></div>
+      <div class="form-field"><label>Vessel</label><select name="vessel" required>${vOpts}</select></div>
+      <div class="form-field"><label>Sounding Tangki Sebelum (mm)</label><input type="number" name="tBefore" required value="3900"></div>
+      <div class="form-field"><label>Sounding Tangki Sesudah (mm)</label><input type="number" name="tAfter" required value="1360"></div>
+      <div class="form-field"><label>Sounding Vessel Sebelum (mm)</label><input type="number" name="vBefore" required value="2280"></div>
+      <div class="form-field"><label>Sounding Vessel Sesudah (mm)</label><input type="number" name="vAfter" value="" placeholder="Isi setelah selesai"></div>
+      <div class="form-field"><label>Vol. Tangki (KL)</label><input type="number" step="0.01" name="volTank" required></div>
+      <div class="form-field"><label>Vol. Vessel (KL)</label><input type="number" step="0.01" name="volVessel" placeholder="Isi setelah selesai"></div>
+      <div class="form-field"><label>No. Seal</label><input type="text" name="seal" required placeholder="SG-3xxxx"></div>
+      <div class="form-field"><label>Status</label><select name="status" required><option value="In Progress">In Progress</option><option value="Completed">Completed</option></select></div>
+      <div class="form-field"><label>Mulai</label><input type="datetime-local" name="dtStart" required value="2026-07-17T07:00"></div>
+      <div class="form-field"><label>Selesai</label><input type="datetime-local" name="dtEnd"></div>
+    </div>
+  `, data=>{
+    const id = 'SH-'+String(state.idSeq.sh++).padStart(3,'0');
+    DB.shipLoading.push({id, tank:data.tank, vessel:data.vessel, dtStart:data.dtStart, dtEnd:data.dtEnd||null,
+      tBefore:+data.tBefore, tAfter:+data.tAfter, vBefore:+data.vBefore, vAfter:data.vAfter?+data.vAfter:null,
+      volTank:+data.volTank, volVessel:data.volVessel?+data.volVessel:null, seal:data.seal, status:data.status,
+      surveyor:currentUser().email, dept:currentUser().dept, bu:currentUser().bu});
+    toast('Loading kapal '+id+' tersimpan.');
+    renderShipLoading();
+  });
+}
+
+/* ---------------- Master Data ---------------- */
+let masterTab = 'users';
+function renderMaster(){
+  const tabs = [
+    {key:'users', label:'Users & Role'},
+    {key:'units', label:'Units'},
+    {key:'vessels', label:'Vessels'},
+    {key:'tanks', label:'Tanks'},
+    {key:'permissions', label:'Role Permission'},
+  ];
+  let body = '';
+  if(masterTab==='users'){
+    body = `<div class="tbl-wrap"><table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Departemen</th><th>Business Unit</th></tr></thead><tbody>
+      ${USERS.map(u=>`<tr><td>${esc(u.name)}</td><td class="mono">${esc(u.email)}</td><td>${esc(ROLE_CONFIG[u.role].label)}</td><td>${esc(deptById(u.dept).name)}</td><td>${u.bu? esc(buById(u.bu).name):'Semua BU'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  } else if(masterTab==='units'){
+    body = `<div class="tbl-wrap"><table><thead><tr><th>Plat</th><th>Tipe</th><th>Kapasitas</th><th>Pemilik</th></tr></thead><tbody>
+      ${UNITS.map(u=>`<tr><td class="mono">${esc(u.plate)}</td><td>${esc(u.type)}</td><td class="mono">${fmtNum(u.cap,0)} L</td><td>${esc(u.owner)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  } else if(masterTab==='vessels'){
+    body = `<div class="tbl-wrap"><table><thead><tr><th>Nama Vessel</th><th>IMO</th><th>Kapasitas</th></tr></thead><tbody>
+      ${VESSELS.map(v=>`<tr><td>${esc(v.name)}</td><td class="mono">${esc(v.imo)}</td><td class="mono">${fmtNum(v.cap,0)} KL</td></tr>`).join('')}
+    </tbody></table></div>`;
+  } else if(masterTab==='tanks'){
+    body = `<div class="tbl-wrap"><table><thead><tr><th>Tangki</th><th>Lokasi</th><th>Produk</th><th>Kapasitas</th></tr></thead><tbody>
+      ${TANKS.map(t=>`<tr><td class="mono">${esc(t.name)}</td><td>${esc(t.location)}</td><td>${esc(productById(t.product).name)}</td><td class="mono">${fmtNum(t.cap,0)} KL</td></tr>`).join('')}
+    </tbody></table></div>`;
+  } else if(masterTab==='permissions'){
+    body = `<div class="tbl-wrap"><table><thead><tr><th>Role</th><th class="wrap">Modul Dapat Diakses</th><th>Lingkup Data</th><th>Buat Data</th><th>Approve</th></tr></thead><tbody>
+      ${Object.keys(ROLE_CONFIG).map(k=>{
+        const r = ROLE_CONFIG[k];
+        return `<tr><td>${esc(r.label)}</td><td class="wrap mono" style="font-size:11px">${r.modules.filter(m=>m!=='dashboard').join(', ')||'—'}</td><td>${esc(r.scope)}</td><td>${r.canCreate?icon('check',14):'—'}</td><td>${r.canApprove?icon('check',14):'—'}</td></tr>`;
+      }).join('')}
+    </tbody></table></div>`;
+  }
+  document.getElementById('main').innerHTML = `
+    <div class="page-head"><div><div class="page-title">Master Data &amp; Konfigurasi Role</div><div class="page-desc">Referensi data induk dan matriks hak akses lintas divisi.</div></div></div>
+    <div class="master-tabs">${tabs.map(t=>`<button class="master-tab ${masterTab===t.key?'active':''}" data-tab="${t.key}">${esc(t.label)}</button>`).join('')}</div>
+    ${body}
+  `;
+  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click', ()=>{ masterTab=b.getAttribute('data-tab'); renderMaster(); }));
+}
+
+/* ---------------- Router ---------------- */
+function renderMain(){
+  if(!hasAccess(state.module)) state.module='dashboard';
+  const map = {
+    dashboard:renderDashboard, inspection_pre:renderInspectionPre, inspection_after:renderInspectionAfter,
+    loading:renderLoading, receiving:renderReceiving, validation:renderValidation,
+    discharge:renderDischarge, ship_loading:renderShipLoading, master:renderMaster,
+  };
+  (map[state.module]||renderDashboard)();
+}
+
+/* ---------------- Init ---------------- */
+function init(){
+  renderSidebar();
+  renderTopbar();
+  renderMain();
+}
+init();
+</script>
+</body>
+</html>

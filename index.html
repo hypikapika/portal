@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fuel Custody Live — Enterprise Fuel Operations Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="styles.css?v=20260719-enterprise-v3">
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-row">
+        <div class="logo">FC</div>
+        <div><div class="brand-title">Fuel Custody Live</div><div class="brand-sub">Blending · Transport · Receiving</div></div>
+      </div>
+      <div class="site-chip"><span><span class="live-dot"></span>System status</span><b class="mono" style="font-size:10px;color:var(--green)">LIVE</b></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <label>Simulasi role</label>
+      <select id="roleSelect" class="role-select"></select>
+      <div class="role-scope" id="roleScope"></div>
+    </div>
+  </aside>
+  <div class="mobile-overlay" id="overlay"></div>
+  <main class="main-shell">
+    <header class="topbar">
+      <div style="display:flex;align-items:center"><button class="menu-btn" id="menuBtn">☰</button><div class="crumb">PTSI / <b id="crumb">Live Dashboard</b></div></div>
+      <div class="top-right"><div class="clock" id="clock"></div><div class="user-chip"><div class="avatar" id="avatar">FO</div><div><div class="user-name" id="userName">Fuel Field Operator</div><div class="user-role" id="userRole">Fuel Blending</div></div></div></div>
+    </header>
+    <div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+    <section class="content" id="content"></section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js" defer></script>
+<script src="app.js?v=20260719-enterprise-v3" defer></script>
+</body>
+</html>
